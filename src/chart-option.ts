@@ -64,17 +64,30 @@ function makeLayerData(
 
   for (let yIndex = 0; yIndex < Y_CATEGORIES.length; yIndex += 1) {
     for (let xIndex = 0; xIndex < X_CATEGORIES.length; xIndex += 1) {
-      const raw =
-        18 + rowIndex * 17 + columnIndex * 11 +
-        xIndex * 7 + yIndex * 9 + layerOffset +
-        ((xIndex + 1) * (yIndex + 2) * (columnIndex + 2)) % 23;
-      const value = Math.max(VALUE_MIN, Math.min(VALUE_MAX, raw % 101));
-
-      data.push([xIndex, yIndex, value]);
+      data.push([
+        xIndex,
+        yIndex,
+        makeLayerValue(rowIndex, columnIndex, xIndex, yIndex, layerOffset)
+      ]);
     }
   }
 
   return data;
+}
+
+function makeLayerValue(
+  rowIndex: number,
+  columnIndex: number,
+  xIndex: number,
+  yIndex: number,
+  layerOffset: number
+): number {
+  const raw =
+    18 + rowIndex * 17 + columnIndex * 11 +
+    xIndex * 7 + yIndex * 9 + layerOffset +
+    ((xIndex + 1) * (yIndex + 2) * (columnIndex + 2)) % 23;
+
+  return Math.max(VALUE_MIN, Math.min(VALUE_MAX, raw % 101));
 }
 
 function formatTooltip(params: TooltipComponentFormatterCallbackParams): string {
@@ -111,11 +124,20 @@ function formatTooltip(params: TooltipComponentFormatterCallbackParams): string 
   const layer = match[3] === 'observed' ? 'Observed' : 'Forecast';
   const xCategory = X_CATEGORIES[xIndex] ?? String(xIndex);
   const yCategory = Y_CATEGORIES[yIndex] ?? String(yIndex);
+  const observedValue =
+    layer === 'Observed'
+      ? numericValue
+      : makeLayerValue(rowIndex, columnIndex, xIndex, yIndex, 0);
+  const forecastValue =
+    layer === 'Forecast'
+      ? numericValue
+      : makeLayerValue(rowIndex, columnIndex, xIndex, yIndex, 9);
 
   return [
     `<strong>${rowName} · ${columnName}</strong>`,
-    `${layer}: ${xCategory}, ${yCategory}`,
-    `Value: ${numericValue}`
+    `${xCategory} · ${yCategory}`,
+    `Observed${layer === 'Observed' ? ' (hovered)' : ''}: ${observedValue}`,
+    `Forecast${layer === 'Forecast' ? ' (hovered)' : ''}: ${forecastValue}`
   ].join('<br/>');
 }
 
