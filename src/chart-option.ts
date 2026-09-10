@@ -222,7 +222,12 @@ export function buildChartOption(state: SharingState): EChartsOption {
           yAxisId: cellId,
           data: makeLayerData(rowIndex, columnIndex, 9),
           progressive: 0,
-          itemStyle: { borderColor: '#ffffff', borderWidth: 0.5 }
+          itemStyle: {
+            opacity: 0.58,
+            borderColor: 'rgba(255, 255, 255, 0.9)',
+            borderWidth: 1,
+            borderType: 'dashed'
+          }
         }
       );
 
