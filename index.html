@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f4f6f8" />
+    <title>ECharts Matrix Sharing POC</title>
+  </head>
+  <body>
+    <main class="page-shell">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">ECharts 6 proof of concept</p>
+          <h1>Matrix sharing controls</h1>
+          <p class="lede">Compare twelve heatmap panels while switching shared axes, legends, visual maps, and zoom.</p>
+        </div>
+        <span class="instance-badge">One chart instance</span>
+      </header>
+
+      <section class="control-surface" aria-labelledby="settings-heading">
+        <div class="control-heading">
+          <h2 id="settings-heading">Sharing settings</h2>
+          <p>Each option updates the same matrix without recreating the chart.</p>
+        </div>
+        <div class="settings-grid">
+          <label class="switch-control"><input type="checkbox" data-setting="shareVisualMap"><span class="switch-track" aria-hidden="true"></span><span>Shared visual map</span></label>
+          <label class="switch-control"><input type="checkbox" data-setting="shareLegend"><span class="switch-track" aria-hidden="true"></span><span>Shared legend</span></label>
+          <label class="switch-control"><input type="checkbox" data-setting="shareXAxis"><span class="switch-track" aria-hidden="true"></span><span>Shared X axis</span></label>
+          <label class="switch-control"><input type="checkbox" data-setting="shareYAxis"><span class="switch-track" aria-hidden="true"></span><span>Shared Y axis</span></label>
+          <label class="switch-control" data-zoom-control><input type="checkbox" data-setting="shareDataZoom"><span class="switch-track" aria-hidden="true"></span><span>Shared data zoom</span></label>
+        </div>
+        <p class="control-note" data-zoom-note>Shared data zoom is available when Shared X axis or Shared Y axis is enabled.</p>
+      </section>
+
+      <p id="chart-status" class="status-line" role="status" aria-live="polite">Initializing matrix…</p>
+      <div class="chart-scroll">
+        <div id="matrix-chart" role="img" aria-label="A 3 by 4 matrix of observed and forecast heatmaps"></div>
+      </div>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
