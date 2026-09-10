@@ -141,8 +141,38 @@ function formatTooltip(params: TooltipComponentFormatterCallbackParams): string 
   ].join('<br/>');
 }
 
-export function buildChartOption(state: SharingState): EChartsOption {
+export function buildChartOption(
+  state: SharingState,
+  previousLegendOption: EChartsOption['legend'] = []
+): EChartsOption {
   const normalized = normalizeSharingState(state);
+  const previousLegends = Array.isArray(previousLegendOption)
+    ? previousLegendOption
+    : [previousLegendOption];
+  const previousSharedLegend = previousLegends.find(
+    (legend) => legend.id === 'shared-legend'
+  );
+
+  function isLayerSelected(cellId: string, layer: string): boolean {
+    if (previousSharedLegend) {
+      return previousSharedLegend.selected?.[layer] !== false;
+    }
+
+    const previousLocalLegend = previousLegends.find(
+      (legend) => legend.id === `${cellId}-legend`
+    );
+    return previousLocalLegend?.selected?.[`${cellId}:${layer}`] !== false;
+  }
+
+  // Mixed local selections collapse to visible if any cell shows the layer.
+  function isSharedLayerSelected(layer: string): boolean {
+    return MATRIX_ROWS.some((_row, rowIndex) =>
+      MATRIX_COLUMNS.some((_column, columnIndex) =>
+        isLayerSelected(`cell-${rowIndex}-${columnIndex}`, layer)
+      )
+    );
+  }
+
   const grids: MatrixGridOption[] = [];
   const xAxes: XAxisComponentOption[] = [];
   const yAxes: YAxisComponentOption[] = [];
@@ -259,6 +289,10 @@ export function buildChartOption(state: SharingState): EChartsOption {
           coordinateSystem: 'matrix',
           coord,
           data: [observedName, forecastName],
+          selected: {
+            [observedName]: isLayerSelected(cellId, 'Observed'),
+            [forecastName]: isLayerSelected(cellId, 'Forecast')
+          },
           formatter: (name: string) => name.replace(`${cellId}:`, ''),
           top: 4,
           left: 'center',
@@ -315,6 +349,10 @@ export function buildChartOption(state: SharingState): EChartsOption {
     legends.push({
       id: 'shared-legend',
       data: ['Observed', 'Forecast'],
+      selected: {
+        Observed: isSharedLayerSelected('Observed'),
+        Forecast: isSharedLayerSelected('Forecast')
+      },
       top: 18,
       left: 'center',
       selectedMode: true

@@ -75,7 +75,7 @@ In local mode, series names include a cell-specific identity so each of the twel
 
 In shared mode, series names are rebuilt into the common `Observed` and `Forecast` groups. One legend above the matrix controls the corresponding layer across all twelve cells.
 
-Legend selection is retained across option rebuilding when the local-to-shared mapping is unambiguous.
+Legend selection is retained across option rebuilding. The pure option builder accepts the previous legend options as an explicit input. Unchanged local identities retain their selections, and a shared selection expands into every local legend. Uniform local selections collapse to the same shared selection. If local selections differ, the shared layer is visible when any cell previously showed it; it is hidden only when every cell hid it.
 
 ## Axis Behavior
 

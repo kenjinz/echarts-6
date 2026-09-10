@@ -76,8 +76,9 @@ try {
   }
 
   function render(nextState: SharingState): void {
+    const previousOption = chart.getOption() as echarts.EChartsOption | undefined;
     state = normalizeSharingState(nextState);
-    chart.setOption(buildChartOption(state), {
+    chart.setOption(buildChartOption(state, previousOption?.legend), {
       notMerge: true,
       lazyUpdate: false
     });
@@ -115,11 +116,14 @@ try {
 
   window.addEventListener(
     'pagehide',
-    () => {
+    (event) => {
+      if (event.persisted) {
+        return;
+      }
+
       resizeObserver.disconnect();
       chart.dispose();
-    },
-    { once: true }
+    }
   );
 
   render({ ...DEFAULT_SHARING_STATE });
