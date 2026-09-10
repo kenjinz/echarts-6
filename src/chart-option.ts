@@ -3,8 +3,8 @@ import type {
   DataZoomComponentOption,
   EChartsOption,
   GridComponentOption,
-  HeatmapSeriesOption,
   PlainLegendComponentOption,
+  ScatterSeriesOption,
   TooltipComponentFormatterCallbackParams,
   XAxisComponentOption,
   YAxisComponentOption
@@ -35,7 +35,7 @@ const VALUE_MAX = 100;
 
 const VISUAL_MAP_COLORS = ['#2563eb', '#06b6d4', '#f59e0b', '#dc2626'];
 
-type HeatmapDatum = [xValue: number, yValue: number, value: number];
+type PointDatum = [xValue: number, yValue: number, value: number];
 
 interface MatrixHostedOption {
   coordinateSystem: 'matrix';
@@ -59,8 +59,8 @@ function makeLayerData(
   rowIndex: number,
   columnIndex: number,
   layerOffset: number
-): HeatmapDatum[] {
-  const data: HeatmapDatum[] = [];
+): PointDatum[] {
+  const data: PointDatum[] = [];
 
   for (let yIndex = 0; yIndex < Y_VALUES.length; yIndex += 1) {
     for (let xIndex = 0; xIndex < X_VALUES.length; xIndex += 1) {
@@ -187,7 +187,7 @@ export function buildChartOption(
     | MatrixVisualMapOption
   )[] = [];
   const dataZoom: DataZoomComponentOption[] = [];
-  const series: HeatmapSeriesOption[] = [];
+  const series: ScatterSeriesOption[] = [];
 
   const option: EChartsOption = {
     animationDurationUpdate: 250,
@@ -268,26 +268,31 @@ export function buildChartOption(
         {
           id: `${cellId}-observed`,
           name: observedName,
-          type: 'heatmap',
+          type: 'scatter',
           xAxisId: cellId,
           yAxisId: cellId,
           data: makeLayerData(rowIndex, columnIndex, 0),
           progressive: 0,
-          itemStyle: { borderColor: '#ffffff', borderWidth: 0.5 }
+          symbol: 'circle',
+          symbolSize: 12,
+          symbolOffset: [-4, 0],
+          itemStyle: { borderColor: '#ffffff', borderWidth: 0.75 }
         },
         {
           id: `${cellId}-forecast`,
           name: forecastName,
-          type: 'heatmap',
+          type: 'scatter',
           xAxisId: cellId,
           yAxisId: cellId,
           data: makeLayerData(rowIndex, columnIndex, 9),
           progressive: 0,
+          symbol: 'diamond',
+          symbolSize: 12,
+          symbolOffset: [4, 0],
           itemStyle: {
-            opacity: 0.58,
+            opacity: 0.82,
             borderColor: 'rgba(255, 255, 255, 0.9)',
-            borderWidth: 1,
-            borderType: 'dashed'
+            borderWidth: 0.75
           }
         }
       );
@@ -321,6 +326,7 @@ export function buildChartOption(
           coordinateSystem: 'matrix',
           coord,
           seriesIndex: cellSeriesIndexes,
+          dimension: 2,
           min: VALUE_MIN,
           max: VALUE_MAX,
           calculable: true,
@@ -373,6 +379,7 @@ export function buildChartOption(
       id: 'shared-visual-map',
       type: 'continuous',
       seriesIndex: series.map((_seriesOption, seriesIndex) => seriesIndex),
+      dimension: 2,
       min: VALUE_MIN,
       max: VALUE_MAX,
       calculable: true,

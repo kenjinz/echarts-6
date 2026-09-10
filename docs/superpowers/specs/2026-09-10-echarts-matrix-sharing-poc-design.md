@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Build a minimal Vite and TypeScript proof of concept for experimenting with the ECharts 6 matrix coordinate system. The page presents twelve heatmaps in a 3-row by 4-column matrix while creating exactly one ECharts instance.
+Build a minimal Vite and TypeScript proof of concept for experimenting with the ECharts 6 matrix coordinate system. The page presents twelve scatter plots in a 3-row by 4-column matrix while creating exactly one ECharts instance.
 
 The POC demonstrates switching between per-cell and shared visual maps, legends, axes, and data zoom controls. It is intentionally self-contained, uses deterministic sample data, and does not include automated tests.
 
@@ -12,7 +12,7 @@ The workspace will contain a small Vite application with these responsibilities:
 
 - `index.html` provides the application mount point.
 - `src/main.ts` creates the controls, owns interaction state, initializes the single chart instance, and coordinates option updates.
-- `src/chart-option.ts` generates deterministic heatmap data and builds the complete ECharts option from the current sharing state.
+- `src/chart-option.ts` generates deterministic scatter data and builds the complete ECharts option from the current sharing state.
 - `src/style.css` defines the page, control bar, chart sizing, responsive behavior, and disabled-control treatment.
 
 The application will depend on ECharts 6.x and Vite's minimal TypeScript toolchain. It will not use a UI framework.
@@ -23,7 +23,7 @@ One call to `echarts.init` creates the only chart instance. One ECharts `matrix`
 
 - one nested Cartesian `grid` component;
 - one internal category X axis and one internal category Y axis;
-- one Observed heatmap series and one Forecast heatmap series;
+- one Observed scatter series and one Forecast scatter series;
 - cell-specific component placement for local legend and visual-map modes; and
 - local inside data zoom when axes and zoom are not shared.
 
@@ -63,7 +63,7 @@ Every change calls a pure `buildChartOption(state)` function and applies the res
 
 In local mode, each cell has a compact visual map targeting only that cell's two series. A local range selection changes only its cell.
 
-In shared mode, the twelve local visual maps are replaced by one vertical visual map on the right side of the full matrix. It targets all twenty-four heatmap series, and its range selection recolors all cells.
+In shared mode, the twelve local visual maps are replaced by one vertical visual map on the right side of the full matrix. It targets all twenty-four scatter series, and its range selection recolors all cells.
 
 The shared visual map uses a common numeric extent across the deterministic dataset. Local visual maps use that same extent so switching modes does not change the meaning of the colors.
 
@@ -93,7 +93,7 @@ When Y sharing is enabled:
 - only the three Y axes belonging to the leftmost column render their line, ticks, and labels; and
 - each visible left axis represents the row beside it.
 
-Both settings can be enabled independently or together. Hidden axes continue to provide coordinate systems to their heatmap series while taking minimal visual space.
+Both settings can be enabled independently or together. Hidden axes continue to provide coordinate systems to their scatter series while taking minimal visual space.
 
 ## Data Zoom Behavior
 
@@ -129,7 +129,7 @@ No automated tests will be added, as requested. Verification consists of:
 
 - installing dependencies successfully;
 - running the TypeScript compiler through the Vite production build;
-- opening the app in a browser and confirming a 3 by 4 matrix of heatmaps;
+- opening the app in a browser and confirming a 3 by 4 matrix of scatter plots;
 - confirming the runtime reports one ECharts instance;
 - toggling local and shared visual maps and checking their targeting;
 - toggling local and shared legends and checking Observed and Forecast visibility;
