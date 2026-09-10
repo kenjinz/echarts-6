@@ -28,14 +28,14 @@ export const DEFAULT_SHARING_STATE: Readonly<SharingState> = {
 
 const MATRIX_COLUMNS = ['North', 'East', 'South', 'West'];
 const MATRIX_ROWS = ['Temperature', 'Humidity', 'Pressure'];
-const X_CATEGORIES = ['00', '03', '06', '09', '12', '15', '18', '21'];
-const Y_CATEGORIES = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const X_VALUES = [0, 3, 6, 9, 12, 15, 18, 21];
+const Y_VALUES = [1, 2, 3, 4, 5, 6];
 const VALUE_MIN = 0;
 const VALUE_MAX = 100;
 
 const VISUAL_MAP_COLORS = ['#2563eb', '#06b6d4', '#f59e0b', '#dc2626'];
 
-type HeatmapDatum = [xIndex: number, yIndex: number, value: number];
+type HeatmapDatum = [xValue: number, yValue: number, value: number];
 
 interface MatrixHostedOption {
   coordinateSystem: 'matrix';
@@ -62,11 +62,11 @@ function makeLayerData(
 ): HeatmapDatum[] {
   const data: HeatmapDatum[] = [];
 
-  for (let yIndex = 0; yIndex < Y_CATEGORIES.length; yIndex += 1) {
-    for (let xIndex = 0; xIndex < X_CATEGORIES.length; xIndex += 1) {
+  for (let yIndex = 0; yIndex < Y_VALUES.length; yIndex += 1) {
+    for (let xIndex = 0; xIndex < X_VALUES.length; xIndex += 1) {
       data.push([
-        xIndex,
-        yIndex,
+        X_VALUES[xIndex],
+        Y_VALUES[yIndex],
         makeLayerValue(rowIndex, columnIndex, xIndex, yIndex, layerOffset)
       ]);
     }
@@ -107,23 +107,28 @@ function formatTooltip(params: TooltipComponentFormatterCallbackParams): string 
 
   const rowIndex = Number(match[1]);
   const columnIndex = Number(match[2]);
-  const xIndex = value[0];
-  const yIndex = value[1];
+  const xValue = value[0];
+  const yValue = value[1];
   const numericValue = value[2];
 
   if (
-    typeof xIndex !== 'number' ||
-    typeof yIndex !== 'number' ||
+    typeof xValue !== 'number' ||
+    typeof yValue !== 'number' ||
     typeof numericValue !== 'number'
   ) {
+    return '';
+  }
+
+  const xIndex = X_VALUES.indexOf(xValue);
+  const yIndex = Y_VALUES.indexOf(yValue);
+
+  if (xIndex < 0 || yIndex < 0) {
     return '';
   }
 
   const rowName = MATRIX_ROWS[rowIndex] ?? 'Unknown row';
   const columnName = MATRIX_COLUMNS[columnIndex] ?? 'Unknown column';
   const layer = match[3] === 'observed' ? 'Observed' : 'Forecast';
-  const xCategory = X_CATEGORIES[xIndex] ?? String(xIndex);
-  const yCategory = Y_CATEGORIES[yIndex] ?? String(yIndex);
   const observedValue =
     layer === 'Observed'
       ? numericValue
@@ -135,7 +140,7 @@ function formatTooltip(params: TooltipComponentFormatterCallbackParams): string 
 
   return [
     `<strong>${rowName} · ${columnName}</strong>`,
-    `${xCategory} · ${yCategory}`,
+    `X: ${xValue} · Y: ${yValue}`,
     `Observed${layer === 'Observed' ? ' (hovered)' : ''}: ${observedValue}`,
     `Forecast${layer === 'Forecast' ? ' (hovered)' : ''}: ${forecastValue}`
   ].join('<br/>');
@@ -228,19 +233,23 @@ export function buildChartOption(
       xAxes.push({
         id: cellId,
         gridId: cellId,
-        type: 'category',
-        data: X_CATEGORIES,
+        type: 'value',
+        min: X_VALUES[0],
+        max: X_VALUES[X_VALUES.length - 1],
+        interval: 3,
         axisLine: { show: showXAxis },
         axisTick: { show: showXAxis },
-        axisLabel: { show: showXAxis, fontSize: 9, interval: 1 },
+        axisLabel: { show: showXAxis, fontSize: 9 },
         splitLine: { show: false }
       });
 
       yAxes.push({
         id: cellId,
         gridId: cellId,
-        type: 'category',
-        data: Y_CATEGORIES,
+        type: 'value',
+        min: Y_VALUES[0],
+        max: Y_VALUES[Y_VALUES.length - 1],
+        interval: 1,
         axisLine: { show: showYAxis },
         axisTick: { show: showYAxis },
         axisLabel: { show: showYAxis, fontSize: 9 },

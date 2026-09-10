@@ -33,7 +33,7 @@ ECharts scopes each Cartesian axis to one grid. Therefore, a single physical Car
 
 ## Sample Data
 
-All cells use the same categorical X and Y domains so shared axes and linked zoom have an unambiguous meaning. Each cell has a stable region-and-metric title and a deterministic numeric offset. Observed and Forecast values are generated from the same deterministic formula with a layer-specific variation.
+All cells use the same numeric X and Y domains so shared axes and linked zoom have an unambiguous meaning. X spans `0..21` in steps of 3 and Y spans `1..6` in steps of 1. Each cell has a stable region-and-metric title and a deterministic numeric offset. Observed and Forecast values are generated from the same deterministic formula with a layer-specific variation.
 
 The data remains stable when settings change. This makes visual comparisons meaningful and prevents option rebuilding from appearing to produce new measurements.
 
@@ -41,8 +41,8 @@ Tooltips identify:
 
 - the cell title;
 - the Observed or Forecast layer;
-- the X category;
-- the Y category; and
+- the numeric X value;
+- the numeric Y value; and
 - the numeric value.
 
 ## Sharing State
@@ -83,13 +83,13 @@ In local mode, all twelve cells render their own X and Y axes, including axis li
 
 When X sharing is enabled:
 
-- every cell retains an internal X axis with the same category domain and extent;
+- every cell retains an internal value X axis with the same numeric domain and extent;
 - only the four X axes belonging to the bottom row render their line, ticks, and labels; and
 - each visible bottom axis represents the column above it.
 
 When Y sharing is enabled:
 
-- every cell retains an internal Y axis with the same category domain and extent;
+- every cell retains an internal value Y axis with the same numeric domain and extent;
 - only the three Y axes belonging to the leftmost column render their line, ticks, and labels; and
 - each visible left axis represents the row beside it.
 
