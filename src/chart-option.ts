@@ -159,11 +159,11 @@ export function buildChartOption(state: SharingState): EChartsOption {
     matrix: {
       id: 'poc-matrix',
       left: 92,
-      right: normalized.shareVisualMap || normalized.shareYAxis ? 132 : 42,
+      right: normalized.shareVisualMap || normalized.shareYAxis ? 172 : 42,
       top: normalized.shareLegend ? 76 : 34,
       bottom: normalized.shareDataZoom && normalized.shareXAxis ? 84 : 46,
       x: { data: MATRIX_COLUMNS, levelSize: 32 },
-      y: { data: MATRIX_ROWS, levelSize: 38 },
+      y: { data: MATRIX_ROWS, levelSize: 90 },
       body: { itemStyle: { borderColor: '#cbd5e1', borderWidth: 1 } }
     },
     tooltip: { trigger: 'item', confine: true, formatter: formatTooltip },
@@ -189,7 +189,7 @@ export function buildChartOption(state: SharingState): EChartsOption {
         coordinateSystem: 'matrix',
         coord,
         top: normalized.shareLegend ? 8 : 26,
-        right: normalized.shareVisualMap ? 8 : 34,
+        right: normalized.shareVisualMap ? 8 : 72,
         bottom: 26,
         left: 34,
         containLabel: false
@@ -345,7 +345,7 @@ export function buildChartOption(state: SharingState): EChartsOption {
         type: 'slider',
         xAxisIndex: 'all',
         left: 92,
-        right: 132,
+        right: 172,
         bottom: 20,
         height: 22,
         filterMode: 'filter'
@@ -367,7 +367,7 @@ export function buildChartOption(state: SharingState): EChartsOption {
         yAxisIndex: 'all',
         top: normalized.shareLegend ? 76 : 34,
         bottom: normalized.shareDataZoom && normalized.shareXAxis ? 84 : 46,
-        right: 70,
+        right: 124,
         width: 22,
         filterMode: 'filter'
       },
