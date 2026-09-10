@@ -40,6 +40,7 @@ h2 { font-size: 1rem; }
 .switch-control input:checked + .switch-track::after { transform: translateX(14px); }
 .switch-control input:focus-visible + .switch-track { outline: 3px solid rgb(46 115 208 / 28%); outline-offset: 2px; }
 .switch-control.is-disabled { cursor: not-allowed; color: var(--muted-text); opacity: .55; }
+.switch-control.is-disabled .switch-track { cursor: not-allowed; }
 .control-note { margin: 12px 0 0; color: var(--muted-text); font-size: .78rem; }
 .status-line { margin: 0 0 12px; color: var(--muted-text); font-size: .84rem; }
 .status-line.is-active { color: var(--accent); }
