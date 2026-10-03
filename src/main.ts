@@ -429,7 +429,7 @@ async function initializeCharts(): Promise<void> {
     cells = createCells(snapshot.rows, snapshot.columns);
     if (!cells.some((cell) => cell.id === selectedCellId)) selectedCellId = cells[0]?.id ?? 'row-0:column-0';
     elements.selectedCell.textContent = selectedCellId;
-  
+
     const usePerCell = currentExample.id === 'R04' ||
       ((currentExample.id === 'G10' || currentExample.id === 'R07') && comparisonInstanceModel === 'per-cell');
     if (usePerCell) {
