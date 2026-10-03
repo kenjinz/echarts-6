@@ -1,4 +1,4 @@
-﻿import { EXAMPLES, getExample } from '../app/experimentRegistry';
+﻿import { getExample } from '../app/experimentRegistry';
 import { APPENDIX, CHAPTERS, LESSONS } from './catalog';
 import { adjacentLesson, filterLessons } from './navigation';
 import type { PresentationMode, Selection, UtilityPanel, Variant } from './types';
@@ -47,6 +47,8 @@ function placeInDisclosure(container: HTMLElement, primary: (item: HTMLElement) 
 
 export function createPresentationView(callbacks: PresentationCallbacks): PresentationView {
   const list = element('example-list');
+  const lede = document.querySelector<HTMLElement>('.lede')!;
+  const engineeringIntro = lede.textContent!;
   const mode = element<HTMLSelectElement>('presentation-mode');
   const variantSelect = element<HTMLSelectElement>('lesson-variant');
   const guide = element('lesson-guide');
@@ -111,6 +113,9 @@ export function createPresentationView(callbacks: PresentationCallbacks): Presen
   function render(selection: Selection, query: string, notice?: string): void {
     active = selection;
     mode.value = selection.mode;
+    lede.textContent = selection.mode === 'guided'
+      ? 'Explore coordinated charts, compare independent and shared controls, and examine the evidence behind each capability.'
+      : engineeringIntro;
     document.body.dataset.presentationMode = selection.mode;
     guide.hidden = selection.mode !== 'guided';
     element('technical-appendix').hidden = selection.mode !== 'guided';
@@ -182,7 +187,5 @@ export function createPresentationView(callbacks: PresentationCallbacks): Presen
     placeInDisclosure(element('sharing-controls'), item => item.classList.contains('is-fixed') || policy.sharing.some(key => item.querySelector(`[data-sharing-element='${key}']`)), 'Advanced sharing controls');
     placeInDisclosure(element('action-controls'), item => policy.actions.some(key => item.dataset.action === key) || policy.sharing.some(key => item.dataset.mutateElement === key), 'Advanced actions');
   }
-  // EXAMPLES remains authoritative; importing the registry never registers new chart types.
-  if (EXAMPLES.length === 0) throw new Error('Engineering catalog is empty');
   return { render, arrangeControls };
 }

@@ -171,3 +171,26 @@ body[data-presentation-mode='guided'] .chart-card { overflow-x: auto; }
   .lesson-guide select, .presentation-mode select { width: 100%; }
   .topbar { flex-wrap: wrap; }
 }
+/* Keep the lesson and its chart in view together on presentation-sized screens. */
+body[data-presentation-mode='guided'] .example-browser { display: flex; flex-direction: column; }
+body[data-presentation-mode='guided'] .example-list { min-height: 0; flex: 1 1 auto; }
+body[data-presentation-mode='guided'] .browser-heading,
+body[data-presentation-mode='guided'] .search-field,
+body[data-presentation-mode='guided'] #technical-appendix { flex-shrink: 0; }
+@media (min-width: 1200px) {
+  body[data-presentation-mode='guided'] .experiment-workspace { grid-template-columns: minmax(250px, .75fr) minmax(520px, 1.65fr); }
+  body[data-presentation-mode='guided'] .experiment-heading,
+  body[data-presentation-mode='guided'] #guided-utilities,
+  body[data-presentation-mode='guided'] #technical-details,
+  body[data-presentation-mode='guided'] #navigation-notice { grid-column: 1 / -1; }
+  body[data-presentation-mode='guided'] .lesson-guide { grid-column: 1; grid-row: 2 / span 2; align-self: start; }
+  body[data-presentation-mode='guided'] .control-panel { grid-column: 2; grid-row: 2; }
+  body[data-presentation-mode='guided'] .chart-card { grid-column: 2; grid-row: 3; }
+  .lesson-navigation [data-testid='lesson-id'] { width: 100%; }
+  #lesson-variant { width: 100%; margin-top: 6px; }
+}
+@media (max-width: 1000px) {
+  body[data-presentation-mode='guided'] .example-list { display: block; max-height: 230px; }
+  body[data-presentation-mode='guided'] .example-group-title { min-width: 0; }
+  body[data-presentation-mode='guided'] .example-button { min-width: 0; }
+}

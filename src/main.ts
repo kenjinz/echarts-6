@@ -1,5 +1,5 @@
 import { createPresentationView } from './presentation/view';
-import { resolveLocation, selectionSearch, switchMode } from './presentation/navigation';
+import { resolveLocation, selectionSearch, switchMode, selectionForImport } from './presentation/navigation';
 import type { Selection, Resolution, PresentationMode } from './presentation/types';
 import { LatestRequest } from './core/latestRequest';
 import * as echarts from 'echarts';
@@ -276,11 +276,12 @@ function renderSharingControls(): void {
     if (capability.fixed) {
       select.disabled = true;
       select.value = 'all';
+      if (selection.mode === 'guided') select.selectedOptions[0].textContent = 'Fixed within panel';
     }
     const field = createField(
       `${elementLabels()[capability.element]} scope`,
       select,
-      capability.reason
+      selection.mode === 'guided' && capability.fixed ? 'Fixed: the main plot and matching profile stay linked.' : capability.reason
     );
     if (capability.fixed) field.classList.add('is-fixed');
     elements.sharingControls.append(field);
@@ -325,7 +326,9 @@ function renderActionControls(): void {
 
 function updateSharingSummary(): void {
   const values = currentExample.sharing.map((capability) =>
-    `${capability.element}: ${capability.fixed ? 'all' : snapshot.sharing[capability.element]}`
+    selection.mode === 'guided'
+      ? `${elementLabels()[capability.element]}: ${capability.fixed ? 'fixed within panel' : SCOPE_LABELS[snapshot.sharing[capability.element]]}`
+      : `${capability.element}: ${capability.fixed ? 'all' : snapshot.sharing[capability.element]}`
   );
   values.push(...(currentExample.fixedCouplings ?? []).map((coupling) => `${coupling.label}: fixed`));
   elements.sharingSummary.textContent = values.length > 0
@@ -578,6 +581,7 @@ function changeDimension(dimension: 'rows' | 'columns', amount: number): void {
   cells = createCells(snapshot.rows, snapshot.columns);
   if (!cells.some((cell) => cell.id === selectedCellId)) selectedCellId = cells[0]?.id ?? 'row-0:column-0';
   renderCommonControls();
+      view.arrangeControls(selection);
   if (comparisonInstanceModel === 'per-cell' && (currentExample.id === 'G10' || currentExample.id === 'R07')) {
     void initializeCharts();
   }
@@ -593,6 +597,7 @@ async function handleAction(action: string): Promise<void> {
     case 'regenerate':
       snapshot.seed += 1;
       renderCommonControls();
+      view.arrangeControls(selection);
       applyOption();
       break;
     case 'enlarge':
@@ -611,6 +616,7 @@ async function handleAction(action: string): Promise<void> {
       cells = [];
       snapshot.interactive.enlargedCellId = null;
       renderCommonControls();
+      view.arrangeControls(selection);
       applyOption();
       elements.chartStatus.textContent = `${currentExample.id} running · No logical cells`;
       break;
@@ -620,6 +626,7 @@ async function handleAction(action: string): Promise<void> {
       cells = createCells(2, 2);
       selectedCellId = cells[0].id;
       renderCommonControls();
+      view.arrangeControls(selection);
       applyOption();
       elements.chartStatus.textContent = `${currentExample.id} running with ${charts.length} ECharts instance${charts.length === 1 ? '' : 's'}`;
       break;
@@ -805,8 +812,9 @@ elements.actionControls.addEventListener('click', (event) => {
   if (button?.dataset.action) void handleAction(button.dataset.action);
 });
 
+window.addEventListener('popstate', () => { void navigate(resolveLocation(location.search), { history: 'none' }); });
 requireElement<HTMLButtonElement>('run-example').addEventListener('click', () => void initializeCharts());
-requireElement<HTMLButtonElement>('reset-example').addEventListener('click', () => void selectExample(currentExample.id));
+requireElement<HTMLButtonElement>('reset-example').addEventListener('click', () => void navigate({ selection }, { history: 'replace' }));
 requireElement<HTMLButtonElement>('export-state').addEventListener('click', () => {
   captureAllChartState();
   elements.stateJson.value = serializeSnapshot(snapshot);
@@ -816,7 +824,7 @@ requireElement<HTMLButtonElement>('import-state').addEventListener('click', asyn
   try {
     const imported = parseSnapshot(elements.stateJson.value);
     getExample(imported.exampleId);
-    await selectExample(imported.exampleId, imported);
+    await navigate({ selection: selectionForImport(selection, imported.exampleId) }, { history: 'push', imported });
   }
   catch (error) {
     elements.chartStatus.textContent = error instanceof Error ? error.message : String(error);

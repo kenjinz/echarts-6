@@ -51,7 +51,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Remove that row."
     ],
     "expected": "Added plots appear and removed plots do not remain visible.",
-    "limitation": "Full replacement is used for clarity"
+    "limitation": "The example rebuilds its chart configuration when panels change."
   },
   "M09": {
     "exampleId": "M09",
@@ -71,7 +71,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Add and remove a different row."
     ],
     "expected": "Check selected-panel identity; this source currently exposes no local zoom, so zoom preservation is not demonstrated here.",
-    "limitation": "Full option replacement used Local zoom is not configured in this variant; zoom-related acceptance remains pending."
+    "limitation": "The example rebuilds its chart configuration; check that unaffected state survives.. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
   },
   "C16": {
     "exampleId": "C16",
@@ -113,7 +113,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Change X and then Y range."
     ],
     "expected": "X and Y target groups remain independent.",
-    "limitation": "Application state required"
+    "limitation": "The application maintains the shared settings."
   },
   "C05": {
     "exampleId": "C05",
@@ -134,7 +134,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Reset the example."
     ],
     "expected": "Observe horizontal target isolation and reset.",
-    "limitation": "Scope topology rebuilt on toggle"
+    "limitation": "Changing sharing scope rebuilds the affected zoom controls."
   },
   "C07": {
     "exampleId": "C07",
@@ -145,7 +145,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Reset the example."
     ],
     "expected": "Observe vertical target isolation and reset.",
-    "limitation": "Scope topology rebuilt on toggle"
+    "limitation": "Changing sharing scope rebuilds the affected zoom controls."
   },
   "C08": {
     "exampleId": "C08",
@@ -166,7 +166,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Repeat with All cells."
     ],
     "expected": "Matching series visibility follows the selected group.",
-    "limitation": "Naming is a data-model constraint"
+    "limitation": "Series names determine which data the shared legend controls."
   },
   "C10": {
     "exampleId": "C10",
@@ -176,7 +176,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Restore it and repeat with Per row."
     ],
     "expected": "A whole series is hidden or shown.",
-    "limitation": "Uses grouped names"
+    "limitation": "Grouped series names determine the targets of visibility changes."
   },
   "C11": {
     "exampleId": "C11",
@@ -197,7 +197,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Restore it and change point-symbol visibility."
     ],
     "expected": "Distinguish whole-series visibility from symbol rendering.",
-    "limitation": "Symbol-only visibility uses setOption"
+    "limitation": "Point visibility requires a chart update from the application."
   },
   "M07": {
     "exampleId": "M07",
@@ -208,7 +208,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Click another panel."
     ],
     "expected": "Event identity should refer to the intended panel.",
-    "limitation": "Context menu is zrender-level"
+    "limitation": "Context-menu events come from the rendering layer and require application routing."
   },
   "C13": {
     "exampleId": "C13",
@@ -229,7 +229,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Restore all panels."
     ],
     "expected": "Observe panel restoration; local zoom is not exposed by this source, so zoom preservation remains unverified.",
-    "limitation": "Matrix headers remain in state for restoration Local zoom is not configured in this variant; zoom-related acceptance remains pending."
+    "limitation": "Matrix headers remain in state for restoration. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
   },
   "S08": {
     "exampleId": "S08",
@@ -250,7 +250,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Resize the browser and inspect the edge."
     ],
     "expected": "Inspect geometry and clipping; this variant currently has no local zoom control.",
-    "limitation": "Representative geometry only Local zoom is not configured in this variant; zoom-related acceptance remains pending."
+    "limitation": "Representative geometry only. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
   },
   "S02": {
     "exampleId": "S02",
@@ -260,7 +260,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Resize the browser."
     ],
     "expected": "Compare screen-sized symbols and domain-sized regions during resize; zoom is not configured in this source and remains unverified.",
-    "limitation": "Visual zoom comparison pending Local zoom is not configured in this variant; zoom-related acceptance remains pending."
+    "limitation": "Visual zoom comparison pending. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
   },
   "S09": {
     "exampleId": "S09",
@@ -271,7 +271,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Restore the panel."
     ],
     "expected": "Inspect aspect ratio and clipping visually.",
-    "limitation": "Exact square-ratio pixel audit pending Local zoom is not configured in this variant; zoom-related acceptance remains pending."
+    "limitation": "Exact square-ratio pixel audit pending. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
   },
   "S04": {
     "exampleId": "S04",
@@ -281,7 +281,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Repeat for All cells."
     ],
     "expected": "Continuous colors represent the same numeric scale.",
-    "limitation": "Scope grouping is application policy"
+    "limitation": "The application decides which panels belong to each sharing group."
   },
   "S05": {
     "exampleId": "S05",
@@ -291,7 +291,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Change color-scale selection for a group."
     ],
     "expected": "Value bands differ from a continuous gradient.",
-    "limitation": "Scope grouping is application policy"
+    "limitation": "The application decides which panels belong to each sharing group."
   },
   "S03": {
     "exampleId": "S03",
@@ -302,7 +302,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Repeat with Per row."
     ],
     "expected": "Arrows respond to application inputs for the intended group.",
-    "limitation": "Numeric input is external HTML"
+    "limitation": "Vector controls belong to the application, rather than the chart library."
   },
   "S06": {
     "exampleId": "S06",
@@ -324,7 +324,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Add a row and inspect prior selection."
     ],
     "expected": "Evaluate selection persistence; local zoom and the scope controls from S06 are not present here.",
-    "limitation": "Application state owns restoration Local zoom is not configured in this variant; zoom-related acceptance remains pending."
+    "limitation": "Application state owns restoration. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
   },
   "P01": {
     "exampleId": "P01",
@@ -365,7 +365,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Inspect the side profile along Y as you zoom."
     ],
     "expected": "Main/top X and main/side Y links are separate.",
-    "limitation": "Local offsets required"
+    "limitation": "Profile placement uses local offsets and still needs visual acceptance review."
   },
   "P09": {
     "exampleId": "P09",
@@ -375,7 +375,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Inspect top profiles and unaffected rows."
     ],
     "expected": "Optional cross-panel sharing preserves required local coupling.",
-    "limitation": "Application state required"
+    "limitation": "The application maintains the shared settings."
   },
   "P10": {
     "exampleId": "P10",
