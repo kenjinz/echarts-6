@@ -1,3 +1,6 @@
+import { createPresentationView } from './presentation/view';
+import { resolveLocation, selectionSearch, switchMode } from './presentation/navigation';
+import type { Selection, Resolution, PresentationMode } from './presentation/types';
 import { LatestRequest } from './core/latestRequest';
 import * as echarts from 'echarts';
 import type { ECharts, EChartsOption } from 'echarts';
@@ -46,7 +49,7 @@ const SCOPE_LABELS: Record<SharingScope, string> = {
   column: 'Per column'
 };
 
-const ELEMENT_LABELS: Record<SharingElement, string> = {
+const ENGINEERING_ELEMENT_LABELS: Record<SharingElement, string> = {
   xRange: 'X range',
   yRange: 'Y range',
   zRange: 'Z range',
@@ -63,6 +66,19 @@ const ELEMENT_LABELS: Record<SharingElement, string> = {
   viewMode: '2D/3D view mode',
   camera: 'Camera'
 };
+
+const GUIDED_ELEMENT_LABELS: Record<SharingElement, string> = {
+  ...ENGINEERING_ELEMENT_LABELS,
+  dataZoomX: 'X linked zoom', dataZoomY: 'Y linked zoom', visualMap: 'Color scale',
+  symbolVisibility: 'Point-symbol visibility', topYRange: 'Top profile value range',
+  rightXRange: 'Side profile value range'
+};
+let selection: Selection = resolveLocation(location.search).selection;
+let navigationNotice: string | undefined;
+const searchByMode: Record<PresentationMode, string> = { guided: '', engineering: '' };
+function elementLabels(): Record<SharingElement, string> {
+  return selection.mode === 'guided' ? GUIDED_ELEMENT_LABELS : ENGINEERING_ELEMENT_LABELS;
+}
 
 function requireElement<T extends HTMLElement>(id: string): T {
   const element = document.getElementById(id);
@@ -156,7 +172,7 @@ function createSelect(
   return select;
 }
 
-function renderNavigation(query = ''): void {
+function renderEngineeringNavigation(query = ''): void {
   elements.list.replaceChildren();
   const normalized = query.trim().toLowerCase();
   const visible = EXAMPLES.filter((example) =>
@@ -262,7 +278,7 @@ function renderSharingControls(): void {
       select.value = 'all';
     }
     const field = createField(
-      `${ELEMENT_LABELS[capability.element]} scope`,
+      `${elementLabels()[capability.element]} scope`,
       select,
       capability.reason
     );
@@ -301,7 +317,7 @@ function renderActionControls(): void {
   for (const capability of currentExample.sharing) {
     if (capability.fixed || mutationElements.has(capability.element)) continue;
     mutationElements.add(capability.element);
-    const button = createButton(`Change ${ELEMENT_LABELS[capability.element]}`);
+    const button = createButton(`Change ${elementLabels()[capability.element]}`);
     button.dataset.mutateElement = capability.element;
     elements.actionControls.append(button);
   }
@@ -513,8 +529,6 @@ async function selectExample(id: string, imported?: AppStateSnapshot): Promise<v
   lastResizeDuration = 0;
   lastInitializationDuration = 0;
   comparisonInstanceModel = 'one';
-  history.replaceState(null, '', `?example=${currentExample.id}`);
-  renderNavigation(elements.search.value);
   renderExampleMetadata();
   renderCommonControls();
   renderSharingControls();
@@ -523,6 +537,8 @@ async function selectExample(id: string, imported?: AppStateSnapshot): Promise<v
   elements.latestTarget.textContent = 'None';
   elements.latestAction.textContent = 'Initialize';
   elements.measurementSummary.textContent = 'Warm-up has not run.';
+  view.render(selection, elements.search.value, navigationNotice);
+  view.arrangeControls(selection);
   await initializeCharts();
 }
 
@@ -692,16 +708,46 @@ function mutateInteractiveState(element: SharingElement): void {
     }
   }
 
-  elements.latestAction.textContent = `${ELEMENT_LABELS[element]} change · ${scope} · ${targets.length} cell${targets.length === 1 ? '' : 's'}`;
+  elements.latestAction.textContent = `${elementLabels()[element]} change · ${scope} · ${targets.length} cell${targets.length === 1 ? '' : 's'}`;
   if (element === 'viewMode') void initializeCharts();
   else applyOption();
 }
 
+
+type NavigateOptions = { history: 'push' | 'replace' | 'none'; preserve?: boolean; imported?: AppStateSnapshot };
+async function navigate(resolution: Resolution, options: NavigateOptions): Promise<void> {
+  getExample(resolution.selection.exampleId);
+  const retain = options.preserve === true && currentExample?.id === resolution.selection.exampleId && !options.imported;
+  selection = resolution.selection;
+  navigationNotice = resolution.notice;
+  const url = `${location.pathname}${selectionSearch(selection)}${location.hash}`;
+  if (options.history === 'push') history.pushState(null, '', url);
+  else if (options.history === 'replace') history.replaceState(null, '', url);
+  elements.search.value = searchByMode[selection.mode];
+  if (retain) {
+    renderExampleMetadata(); renderCommonControls(); renderSharingControls(); renderActionControls();
+    view.render(selection, elements.search.value, navigationNotice);
+    view.arrangeControls(selection);
+    return;
+  }
+  await selectExample(selection.exampleId, options.imported);
+}
+const view = createPresentationView({
+  select: next => { void navigate({ selection: next }, { history: 'push' }); },
+  mode: mode => {
+    captureAllChartState();
+    void navigate(switchMode(selection, mode), { history: 'push', preserve: true });
+  },
+  search: query => {
+    searchByMode[selection.mode] = query;
+    view.render(selection, query, navigationNotice);
+  },
+  renderEngineeringNavigation
+});
 elements.list.addEventListener('click', (event) => {
   const button = (event.target as Element).closest<HTMLButtonElement>('[data-example-id]');
-  if (button?.dataset.exampleId) void selectExample(button.dataset.exampleId);
+  if (button?.dataset.exampleId) void navigate({ selection: { mode: 'engineering', exampleId: button.dataset.exampleId } }, { history: 'push' });
 });
-elements.search.addEventListener('input', () => renderNavigation(elements.search.value));
 elements.sharingControls.addEventListener('change', (event) => {
   const select = event.target as HTMLSelectElement;
   const element = select.dataset.sharingElement as SharingElement | undefined;
@@ -859,11 +905,8 @@ window.addEventListener('pagehide', () => {
   webglInstrumentation.restore();
 }, { once: true });
 
-const requestedExample = new URLSearchParams(location.search).get('example');
-const initialId = requestedExample && EXAMPLES.some((example) => example.id === requestedExample)
-  ? requestedExample
-  : 'M01';
-void selectExample(initialId).catch((error) => {
+
+void navigate(resolveLocation(location.search), { history: 'replace' }).catch((error) => {
   elements.chartStatus.textContent = error instanceof Error ? error.message : String(error);
   elements.chartStatus.classList.add('is-error');
   throw error;

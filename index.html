@@ -14,6 +14,13 @@
           <h1>Matrix multi-panel chart lab</h1>
           <p class='lede'>Run each example independently, change sharing scope at runtime, and capture option and resource evidence.</p>
         </div>
+        <label class="presentation-mode">Catalog view
+  <select id="presentation-mode">
+    <option value="guided">Guided presentation</option>
+    <option value="engineering">Engineering catalog</option>
+  </select>
+</label>
+
         <div class='version-stack' aria-label='Runtime versions'>
           <span>ECharts <strong data-testid='echarts-version'>Loading</strong></span>
           <span>ECharts-GL <strong>2.1.0</strong></span>
@@ -23,14 +30,14 @@
       <div class='workspace'>
         <aside class='example-browser' aria-label='Example browser'>
           <div class='browser-heading'>
-            <div><p class='section-kicker'>Catalog</p><h2>66 examples</h2></div>
+            <div><p class='section-kicker'>Catalog</p><h2 id="catalog-heading">66 examples</h2></div>
             <span id='visible-example-count' class='count-badge'>66</span>
           </div>
           <label class='search-field'>
             <span>Search examples</span>
             <input id='example-search' type='search' placeholder='ID, title, or family' autocomplete='off' />
           </label>
-          <nav id='example-list' class='example-list'></nav>
+          <nav id='example-list' class='example-list' aria-label='Catalog'></nav><details id='technical-appendix' hidden><summary>Technical appendix</summary><div id='appendix-list'></div></details>
         </aside>
 
         <main class='experiment-workspace'>
@@ -49,6 +56,25 @@
             </div>
           </section>
 
+          <section id="lesson-guide" class="card lesson-guide" aria-label="Lesson guide" hidden>
+  <div class="lesson-navigation">
+    <span data-testid="lesson-id"></span>
+    <button id="previous-lesson" type="button" class="button">Previous lesson</button>
+    <button id="next-lesson" type="button" class="button">Next lesson</button>
+  </div>
+  <label>Lesson variant <select id="lesson-variant"></select></label>
+  <p id="variant-position"></p>
+  <p>Changing lessons or variants resets the chart. Export state to save an investigation.</p>
+  <ol id="guide-steps"></ol>
+  <h3>Expected observation</h3><p id="guide-expected"></p>
+  <p id="guide-status">Implemented for evaluation - acceptance review pending.</p>
+  <p id="guide-limitation"></p>
+  <details><summary>How sharing scopes work</summary>
+    <p>Individual changes the selected panel. Per row changes its row. Per column changes its column. All cells changes every panel.</p>
+  </details>
+</section>
+<p id="navigation-notice" role="status" aria-live="polite" hidden></p>
+
           <section class='control-panel card' aria-labelledby='controls-heading'>
             <div class='section-heading'>
               <div><p class='section-kicker'>Runtime configuration</p><h2 id='controls-heading'>Controls</h2></div>
@@ -66,6 +92,12 @@
             </div>
             <div id='experiment-chart' aria-label='Interactive ECharts experiment'></div>
           </section>
+
+          <div id="guided-utilities"></div>
+<details id="technical-details" class="card">
+  <summary>Technical details</summary>
+  <div id="technical-content"></div>
+</details>
 
           <section class='state-panel card' aria-labelledby='state-heading'>
             <div class='section-heading'>

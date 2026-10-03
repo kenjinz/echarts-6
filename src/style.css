@@ -123,3 +123,51 @@ h2 { margin-bottom: 0; font-size: 1.03rem; letter-spacing: -.015em; }
   .summary-text { max-width: 50%; }
   #experiment-chart { height: 560px; }
 }
+
+[hidden] { display: none !important; }
+.lesson-guide { padding: 18px; }
+.lesson-guide p, .lesson-guide li { line-height: 1.55; }
+.lesson-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.lesson-guide select { max-width: 100%; }
+.example-button .label { white-space: normal; overflow-wrap: anywhere; }
+.advanced-content { display: grid; gap: 10px; padding-top: 10px; }
+.control-grid > details { grid-column: 1 / -1; }
+body[data-presentation-mode='guided'] .workspace { grid-template-columns: 270px minmax(0, 1fr); }
+body[data-presentation-mode='guided'] .result-panel { display: none; }
+#technical-details { padding: 16px; }
+#technical-content, #guided-utilities { display: grid; gap: 12px; }
+@media (max-width: 1000px) {
+  body[data-presentation-mode='guided'] .workspace { grid-template-columns: minmax(0, 1fr); }
+  body[data-presentation-mode='guided'] .example-browser { position: static; max-height: none; }
+  body[data-presentation-mode='guided'] .example-list { max-height: 280px; }
+}
+
+.presentation-mode { display: grid; gap: 6px; font-size: .8rem; font-weight: 700; min-width: 190px; }
+.presentation-mode select, #lesson-variant { padding: 9px; border: 1px solid var(--line-strong); border-radius: 8px; background: white; color: var(--ink); font: inherit; }
+#lesson-guide h3 { font-size: .85rem; margin: 18px 0 6px; }
+#lesson-guide ol { margin: 16px 0; padding-left: 24px; }
+#lesson-guide li { margin-bottom: 6px; }
+#lesson-guide > p { font-size: .85rem; }
+#guide-status { color: var(--warning); font-weight: 700; border-top: 1px solid var(--line); padding-top: 12px; }
+#guide-limitation, #variant-position { color: var(--muted); }
+.lesson-navigation { margin-bottom: 15px; }
+.lesson-navigation [data-testid='lesson-id'] { margin-right: auto; font-weight: 800; color: var(--accent); }
+summary { cursor: pointer; font-size: .8rem; font-weight: 750; }
+summary:focus-visible, select:focus-visible { outline: 3px solid #a6c4fc; outline-offset: 3px; }
+button:disabled { opacity: .45; cursor: default; }
+#technical-content { padding-top: 16px; }
+#technical-appendix { padding: 12px 16px; border-top: 1px solid var(--line); }
+#appendix-list { display: grid; gap: 10px; padding-top: 12px; }
+.appendix-case small { display: block; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+#navigation-notice { border-left: 3px solid var(--warning); background: #fff8e8; padding: 12px; }
+#guided-utilities:empty { display: none; }
+.primary-export-panel { padding: 16px; }
+.primary-export-panel h3 { margin-top: 0; }
+body[data-presentation-mode='engineering'] #guided-utilities,
+body[data-presentation-mode='engineering'] #technical-details { display: none; }
+body[data-presentation-mode='guided'] .chart-card { overflow-x: auto; }
+@media (max-width: 600px) {
+  body[data-presentation-mode='guided'] #experiment-chart { min-width: 520px; }
+  .lesson-guide select, .presentation-mode select { width: 100%; }
+  .topbar { flex-wrap: wrap; }
+}

@@ -39,3 +39,17 @@ it('keeps source on mode switches and routes unrelated imports to engineering', 
   expect(selectionForImport(current, 'C07')).toEqual({ mode: 'guided', lessonId: 'D04', exampleId: 'C07' });
   expect(selectionForImport(current, 'R01')).toEqual({ mode: 'engineering', exampleId: 'R01' });
 });
+
+it.each(['?lesson=', '?lesson=%3Cscript%3E', '?lesson=unknown&mode=engineering'])(
+  'normalizes invalid lesson input %s', search => {
+    const result = resolveLocation(search);
+    expect(result.selection).toEqual({ mode: 'guided', lessonId: 'D01', exampleId: 'M02' });
+    expect(result.notice).toBeTruthy();
+  }
+);
+it('uses lesson context before conflicting mode and keeps invalid examples in engineering', () => {
+  expect(resolveLocation('?lesson=D04&example=C07&mode=engineering').selection)
+    .toEqual({ mode: 'guided', lessonId: 'D04', exampleId: 'C07' });
+  expect(resolveLocation('?example=').selection).toEqual({ mode: 'engineering', exampleId: 'M01' });
+  expect(resolveLocation('?mode=unknown').selection).toEqual({ mode: 'guided', lessonId: 'D01', exampleId: 'M02' });
+});
