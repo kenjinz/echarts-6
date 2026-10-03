@@ -361,10 +361,10 @@ async function ensureGlLoaded(): Promise<void> {
   glLoaded = true;
 }
 
-function wantsThreeDimensions(): boolean {
-  if (currentExample.family !== 'three-dimensional' && currentExample.id !== 'R08') return false;
-  return createCells(snapshot.rows, snapshot.columns).some((cell) =>
-    (snapshot.interactive.viewMode[cell.id] ?? '3d') === '3d'
+function wantsThreeDimensions(example = currentExample, state = snapshot): boolean {
+  if (example.family !== 'three-dimensional' && example.id !== 'R08') return false;
+  return createCells(state.rows, state.columns).some((cell) =>
+    (state.interactive.viewMode[cell.id] ?? '3d') === '3d'
   );
 }
 
@@ -419,7 +419,7 @@ function bindChartEvents(chart: ECharts): void {
 }
 
 const initializationRequests = new LatestRequest();
-async function initializeCharts(): Promise<void> {
+async function initializeCharts(): Promise<string | undefined> {
   const request = initializationRequests.begin();
   try {
     const initializationStarted = performance.now();
@@ -476,6 +476,7 @@ async function initializeCharts(): Promise<void> {
     disposeCharts();
     elements.chartStatus.textContent = error instanceof Error ? error.message : String(error);
     elements.chartStatus.classList.add('is-error');
+    return elements.chartStatus.textContent;
   }
 }
 
@@ -523,15 +524,16 @@ function renderExampleMetadata(): void {
   if (version) version.textContent = echarts.version;
 }
 
-async function selectExample(id: string, imported?: AppStateSnapshot): Promise<void> {
+type InvestigationContext = { selectedCellId: string; comparisonInstanceModel: 'one' | 'per-cell' };
+async function selectExample(id: string, imported?: AppStateSnapshot, retained?: InvestigationContext): Promise<string | undefined> {
   currentExample = getExample(id);
   snapshot = prepareSnapshot(id, imported);
-  selectedCellId = 'row-0:column-0';
+  selectedCellId = retained?.selectedCellId ?? 'row-0:column-0';
   initCalls = 0;
   lastSetOptionDuration = 0;
   lastResizeDuration = 0;
   lastInitializationDuration = 0;
-  comparisonInstanceModel = 'one';
+  comparisonInstanceModel = retained?.comparisonInstanceModel ?? 'one';
   renderExampleMetadata();
   renderCommonControls();
   renderSharingControls();
@@ -542,7 +544,7 @@ async function selectExample(id: string, imported?: AppStateSnapshot): Promise<v
   elements.measurementSummary.textContent = 'Warm-up has not run.';
   view.render(selection, elements.search.value, navigationNotice);
   view.arrangeControls(selection);
-  await initializeCharts();
+  return initializeCharts();
 }
 
 function createExportRows(): ExportRow[] {
@@ -722,14 +724,37 @@ function mutateInteractiveState(element: SharingElement): void {
 
 
 type NavigateOptions = { history: 'push' | 'replace' | 'none'; preserve?: boolean; imported?: AppStateSnapshot };
+const navigationRequests = new LatestRequest();
 async function navigate(resolution: Resolution, options: NavigateOptions): Promise<void> {
-  getExample(resolution.selection.exampleId);
-  const retain = options.preserve === true && currentExample?.id === resolution.selection.exampleId && !options.imported;
+  const request = navigationRequests.begin();
+  const nextExample = getExample(resolution.selection.exampleId);
+  if (options.imported) {
+    // Load optional dependencies before changing the active investigation.
+    try {
+      if (wantsThreeDimensions(nextExample, options.imported)) await ensureGlLoaded();
+    } catch (error) {
+      if (!navigationRequests.isCurrent(request)) return;
+      elements.chartStatus.textContent = error instanceof Error ? error.message : String(error);
+      elements.chartStatus.classList.add('is-error');
+      return;
+    }
+    if (!navigationRequests.isCurrent(request)) return;
+    captureAllChartState();
+  }
+  const previous = options.imported ? {
+    selection, notice: navigationNotice, snapshot: structuredClone(snapshot),
+    selectedCellId, comparisonInstanceModel
+  } : undefined;
+  const retain = options.preserve === true && currentExample?.id === nextExample.id && !options.imported;
   selection = resolution.selection;
   navigationNotice = resolution.notice;
-  const url = `${location.pathname}${selectionSearch(selection)}${location.hash}`;
-  if (options.history === 'push') history.pushState(null, '', url);
-  else if (options.history === 'replace') history.replaceState(null, '', url);
+  const commitLocation = (): void => {
+    const url = `${location.pathname}${selectionSearch(selection)}${location.hash}`;
+    if (options.history === 'push') history.pushState(null, '', url);
+    else if (options.history === 'replace') history.replaceState(null, '', url);
+  };
+  // Failed imports must not leave a broken route in browser history.
+  if (!options.imported) commitLocation();
   elements.search.value = searchByMode[selection.mode];
   if (retain) {
     renderExampleMetadata(); renderCommonControls(); renderSharingControls(); renderActionControls();
@@ -737,7 +762,17 @@ async function navigate(resolution: Resolution, options: NavigateOptions): Promi
     view.arrangeControls(selection);
     return;
   }
-  await selectExample(selection.exampleId, options.imported);
+  const error = await selectExample(selection.exampleId, options.imported);
+  if (!navigationRequests.isCurrent(request)) return;
+  if (error && previous) {
+    selection = previous.selection;
+    navigationNotice = previous.notice;
+    elements.search.value = searchByMode[selection.mode];
+    await selectExample(previous.snapshot.exampleId, previous.snapshot, previous);
+    if (!navigationRequests.isCurrent(request)) return;
+    elements.chartStatus.textContent = `Import failed: ${error}`;
+    elements.chartStatus.classList.add('is-error');
+  } else if (options.imported) commitLocation();
 }
 const view = createPresentationView({
   select: next => { void navigate({ selection: next }, { history: 'push' }); },
@@ -906,6 +941,7 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(elements.chartHost);
 
 window.addEventListener('pagehide', () => {
+  navigationRequests.begin();
   initializationRequests.begin();
   resizeObserver.disconnect();
   cancelAnimationFrame(resizeFrame);

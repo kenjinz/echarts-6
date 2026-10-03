@@ -557,7 +557,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "label": "One instance per panel",
     "steps": [
       "Inspect live instance count.",
-      "Change grid size."
+      "Change grid size, then select Run example to rebuild the panels."
     ],
     "expected": "This is the separate-instance baseline.",
     "limitation": "Intentionally resource-heavy comparison"

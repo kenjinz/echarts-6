@@ -1119,3 +1119,18 @@ Report unit/browser test totals from the actual output, build status, screenshot
 Recommend **Native execution**: implement these six dependent tasks in this session, followed by the workflow's independent final review. The tasks share navigation and lifecycle contracts, so keeping implementation context together is useful. Subagent-driven execution is also available if the user prefers task-by-task independent implementation and review.
 
 This plan is ready for user review. Product implementation starts after the user confirms the plan and selects the execution approach, as required by the Superpowers writing-plans handoff.
+
+## Execution result
+
+Implemented all six tasks. Final verification: 65 unit tests, 37 browser tests, and the TypeScript/Vite production build passed. All 15 guided layout screenshots were inspected at wide, constrained, and mobile sizes. The existing Vite large-chunk warning remains.
+
+A fresh independent review checked all five Review Focus entries. Its failed-import finding was fixed with dependency preflight, route commit after success, restoration after chart-build errors, and protection from stale navigation. Its R04 guide finding was fixed by explicitly instructing users to select Run example after changing grid size. Both defects were reproduced with failing browser regressions before fixes; the complete suite passed afterward. No deferred minor findings remain.
+
+Execution rulings, in order:
+
+1. Use an in-place feature branch to honor the requested repository consolidation; cost: no concurrent checkout isolation.
+2. Use native PowerShell/Python bookkeeping instead of Bash workflow helpers; cost: equivalent records require manual workflow bookkeeping.
+3. Keep imported-snapshot regressions in their own focused test file; no behavior cost, only different test organization.
+4. Treat R04's missing Run instruction as Important for the customer teaching flow; cost: an additional guide regression test.
+5. Keep geometry, camera-drag synchronization, rendering parity, export fidelity, and performance verdicts provisional; cost: separate acceptance evidence remains necessary before capability claims.
+6. Preserve R04's existing grid-update engine and explain its Run action; cost: users must perform that explicit rebuild.

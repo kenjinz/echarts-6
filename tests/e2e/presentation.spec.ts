@@ -246,3 +246,71 @@ test('appendix-only examples explain a return to the first guided lesson', async
   await expect(page.locator('#navigation-notice')).toContainText('Reset');
   await expect(page.locator('#chart-status')).toContainText('M02 running');
 });
+
+test('failed GL snapshot import preserves the active investigation', async ({ page }) => {
+  await page.goto('/?lesson=D04&example=C06');
+  await page.getByRole('button', { name: 'Change X linked zoom', exact: true }).click();
+  const before = await page.evaluate(() => (window as any).__matrixPoc.getSnapshot());
+  const activeUrl = page.url();
+  const imported = { ...before, exampleId: 'G08' };
+  await page.route('**/*echarts-gl*', route => route.abort());
+  await page.locator('#technical-details > summary').click();
+  await page.getByLabel('State snapshot JSON').fill(JSON.stringify(imported));
+  await page.getByRole('button', { name: 'Import state', exact: true }).click();
+  await expect(page.locator('#chart-status')).toHaveClass(/is-error/);
+  expect(page.url()).toBe(activeUrl);
+  await expect(page.getByTestId('lesson-id')).toHaveText('D04');
+  expect(await page.evaluate(() => (window as any).__matrixPoc.getSnapshot())).toEqual(before);
+  await expect(page.locator('#experiment-chart canvas')).toHaveCount(1);
+});
+
+test('a delayed import failure does not overwrite a newer lesson', async ({ page }) => {
+  await page.goto('/?lesson=D04&example=C06');
+  const imported = await page.evaluate(() => (window as any).__matrixPoc.getSnapshot());
+  imported.exampleId = 'G08';
+  let release!: () => void;
+  let requested!: () => void;
+  const gate = new Promise<void>(resolve => { release = resolve; });
+  const observed = new Promise<void>(resolve => { requested = resolve; });
+  await page.route('**/*echarts-gl*', async route => {
+    requested(); await gate; await route.abort();
+  });
+  await page.locator('#technical-details > summary').click();
+  await page.getByLabel('State snapshot JSON').fill(JSON.stringify(imported));
+  await page.getByRole('button', { name: 'Import state', exact: true }).click();
+  await observed;
+  await page.getByLabel('Catalog view').selectOption('guided');
+  await page.getByTestId('lesson-button').filter({ hasText: 'D01' }).click();
+  release();
+  await page.waitForLoadState('networkidle');
+  await expect(page.locator('#chart-status')).toContainText('M02 running');
+  await expect(page.locator('#chart-status')).not.toHaveClass(/is-error/);
+  await expect(page).toHaveURL(/lesson=D01&example=M02/);
+});
+
+test('per-panel resource guide explains and performs the size rebuild', async ({ page }) => {
+  await page.goto('/?lesson=D20&example=R04');
+  await expect(page.locator('#guide-steps')).toContainText('Run example');
+  await page.locator('[data-common=rows]').selectOption('3');
+  await page.getByRole('button', { name: 'Run example', exact: true }).click();
+  await expect(page.getByTestId('live-instances')).toHaveText('6');
+  await expect(page.locator('#experiment-chart .baseline-cell')).toHaveCount(6);
+});
+
+test('a chart-build error during import restores the prior investigation', async ({ page }) => {
+  await page.goto('/?lesson=D04&example=C06');
+  await page.getByRole('button', { name: 'Change X linked zoom', exact: true }).click();
+  const before = await page.evaluate(() => (window as any).__matrixPoc.getSnapshot());
+  const imported = structuredClone(before);
+  imported.exampleId = 'S08';
+  imported.interactive.selectedDataItems['row-0:column-0'] = 42;
+  const activeUrl = page.url();
+  await page.locator('#technical-details > summary').click();
+  await page.getByLabel('State snapshot JSON').fill(JSON.stringify(imported));
+  await page.getByRole('button', { name: 'Import state', exact: true }).click();
+  await expect(page.locator('#chart-status')).toHaveClass(/is-error/);
+  expect(page.url()).toBe(activeUrl);
+  await expect(page.getByTestId('lesson-id')).toHaveText('D04');
+  expect(await page.evaluate(() => (window as any).__matrixPoc.getSnapshot())).toEqual(before);
+  await expect(page.locator('#experiment-chart canvas')).toHaveCount(1);
+});
