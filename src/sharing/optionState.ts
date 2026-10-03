@@ -1,3 +1,5 @@
+import { getExample } from '../app/experimentRegistry';
+import { createCells } from '../data/cells';
 import type {
   AppStateSnapshot,
   CellDefinition,
@@ -173,4 +175,19 @@ export function reconcileSharingState(
     if (value !== undefined) bucket[target] = cloneValue(value) as never;
     else delete bucket[target];
   }
+}
+
+// src/sharing/optionState.ts: add imports for getExample and createCells.
+export function prepareSnapshot(exampleId: string, imported?: AppStateSnapshot): AppStateSnapshot {
+  const example = getExample(exampleId);
+  if (imported) {
+    if (imported.exampleId !== exampleId) throw new Error('Snapshot example does not match requested example');
+    return structuredClone(imported);
+  }
+  const state = createDefaultSnapshot(exampleId, 20260914);
+  if (exampleId === 'P12') { state.rows = 3; state.columns = 2; }
+  if (example.family === 'three-dimensional') {
+    for (const cell of createCells(state.rows, state.columns)) state.interactive.viewMode[cell.id] = '3d';
+  }
+  return state;
 }

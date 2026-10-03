@@ -1,3 +1,4 @@
+import { LatestRequest } from './core/latestRequest';
 import * as echarts from 'echarts';
 import type { ECharts, EChartsOption } from 'echarts';
 
@@ -24,7 +25,7 @@ import {
 } from './experiments/buildTwoDimensionalOption';
 import { createInitialScorecard, ResultStore } from './results/resultStore';
 import {
-  createDefaultSnapshot,
+  prepareSnapshot,
   parseSnapshot,
   reconcileSharingState,
   serializeSnapshot
@@ -398,53 +399,65 @@ function bindChartEvents(chart: ECharts): void {
   });
 }
 
+const initializationRequests = new LatestRequest();
 async function initializeCharts(): Promise<void> {
-  const initializationStarted = performance.now();
-  disposeCharts();
-  if (wantsThreeDimensions()) await ensureGlLoaded();
-  cells = createCells(snapshot.rows, snapshot.columns);
-  if (!cells.some((cell) => cell.id === selectedCellId)) selectedCellId = cells[0]?.id ?? 'row-0:column-0';
-  elements.selectedCell.textContent = selectedCellId;
-
-  const usePerCell = currentExample.id === 'R04' ||
-    ((currentExample.id === 'G10' || currentExample.id === 'R07') && comparisonInstanceModel === 'per-cell');
-  if (usePerCell) {
-    elements.chartHost.classList.add('baseline-layout');
-    elements.chartHost.style.setProperty('--baseline-columns', String(snapshot.columns));
-    for (const cell of cells) {
-      const host = document.createElement('div');
-      host.className = 'baseline-cell';
-      host.dataset.cellId = cell.id;
-      elements.chartHost.append(host);
-      const chart = echarts.init(host, undefined, { renderer: snapshot.renderer });
+  const request = initializationRequests.begin();
+  try {
+    const initializationStarted = performance.now();
+    disposeCharts();
+    if (wantsThreeDimensions()) await ensureGlLoaded();
+    if (!initializationRequests.isCurrent(request)) return;
+    cells = createCells(snapshot.rows, snapshot.columns);
+    if (!cells.some((cell) => cell.id === selectedCellId)) selectedCellId = cells[0]?.id ?? 'row-0:column-0';
+    elements.selectedCell.textContent = selectedCellId;
+  
+    const usePerCell = currentExample.id === 'R04' ||
+      ((currentExample.id === 'G10' || currentExample.id === 'R07') && comparisonInstanceModel === 'per-cell');
+    if (usePerCell) {
+      elements.chartHost.classList.add('baseline-layout');
+      elements.chartHost.style.setProperty('--baseline-columns', String(snapshot.columns));
+      for (const cell of cells) {
+        const host = document.createElement('div');
+        host.className = 'baseline-cell';
+        host.dataset.cellId = cell.id;
+        elements.chartHost.append(host);
+        const chart = echarts.init(host, undefined, { renderer: snapshot.renderer });
+        initCalls += 1;
+        charts.push(chart);
+        if (currentExample.id === 'G10') {
+          const normalizedCell = { ...cell, row: 0, column: 0 };
+          chart.setOption(buildDimensionalOption({
+            example: currentExample,
+            cells: [normalizedCell],
+            snapshot: { ...snapshot, rows: 1, columns: 1 }
+          }), { notMerge: true });
+        }
+        else {
+          chart.setOption(buildPerCellCartesianOption(cell, snapshot), { notMerge: true });
+        }
+        bindChartEvents(chart);
+      }
+    }
+    else {
+      const chart = echarts.init(elements.chartHost, undefined, { renderer: snapshot.renderer });
       initCalls += 1;
       charts.push(chart);
-      if (currentExample.id === 'G10') {
-        const normalizedCell = { ...cell, row: 0, column: 0 };
-        chart.setOption(buildDimensionalOption({
-          example: currentExample,
-          cells: [normalizedCell],
-          snapshot: { ...snapshot, rows: 1, columns: 1 }
-        }), { notMerge: true });
-      }
-      else {
-        chart.setOption(buildPerCellCartesianOption(cell, snapshot), { notMerge: true });
-      }
       bindChartEvents(chart);
+      applyOption();
     }
+    elements.chartStatus.textContent = `${currentExample.id} running with ${charts.length} ECharts instance${charts.length === 1 ? '' : 's'}`;
+    elements.chartStatus.classList.remove('is-error');
+    updateClassification();
+    lastInitializationDuration = performance.now() - initializationStarted;
+    requestAnimationFrame(() => {
+      if (initializationRequests.isCurrent(request)) updateMetrics();
+    });
+  } catch (error) {
+    if (!initializationRequests.isCurrent(request)) return;
+    disposeCharts();
+    elements.chartStatus.textContent = error instanceof Error ? error.message : String(error);
+    elements.chartStatus.classList.add('is-error');
   }
-  else {
-    const chart = echarts.init(elements.chartHost, undefined, { renderer: snapshot.renderer });
-    initCalls += 1;
-    charts.push(chart);
-    bindChartEvents(chart);
-    applyOption();
-  }
-  elements.chartStatus.textContent = `${currentExample.id} running with ${charts.length} ECharts instance${charts.length === 1 ? '' : 's'}`;
-  elements.chartStatus.classList.remove('is-error');
-  updateClassification();
-  lastInitializationDuration = performance.now() - initializationStarted;
-  requestAnimationFrame(updateMetrics);
 }
 
 function applyOption(): void {
@@ -493,16 +506,7 @@ function renderExampleMetadata(): void {
 
 async function selectExample(id: string, imported?: AppStateSnapshot): Promise<void> {
   currentExample = getExample(id);
-  snapshot = imported ?? createDefaultSnapshot(id, 20260914);
-  if (currentExample.id === 'P12') {
-    snapshot.rows = 3;
-    snapshot.columns = 2;
-  }
-  if (currentExample.family === 'three-dimensional') {
-    for (const cell of createCells(snapshot.rows, snapshot.columns)) {
-      snapshot.interactive.viewMode[cell.id] = '3d';
-    }
-  }
+  snapshot = prepareSnapshot(id, imported);
   selectedCellId = 'row-0:column-0';
   initCalls = 0;
   lastSetOptionDuration = 0;
@@ -848,6 +852,7 @@ const resizeObserver = new ResizeObserver(() => {
 resizeObserver.observe(elements.chartHost);
 
 window.addEventListener('pagehide', () => {
+  initializationRequests.begin();
   resizeObserver.disconnect();
   cancelAnimationFrame(resizeFrame);
   disposeCharts();
