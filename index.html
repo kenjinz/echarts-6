@@ -1,42 +1,126 @@
 <!doctype html>
-<html lang="en">
+<html lang='en'>
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#f4f6f8" />
-    <title>ECharts Matrix Sharing POC</title>
+    <meta charset='UTF-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0' />
+    <meta name='theme-color' content='#edf2f7' />
+    <title>ECharts Matrix Capability Lab</title>
   </head>
   <body>
-    <main class="page-shell">
-      <header class="page-header">
+    <div class='app-shell'>
+      <header class='topbar'>
         <div>
-          <p class="eyebrow">ECharts 6 proof of concept</p>
-          <h1>Matrix sharing controls</h1>
-          <p class="lede">Compare twelve scatter panels while switching shared axes, legends, visual maps, and zoom.</p>
+          <p class='eyebrow'>ECharts 6.1 capability evaluation</p>
+          <h1>Matrix multi-panel chart lab</h1>
+          <p class='lede'>Run each example independently, change sharing scope at runtime, and capture option and resource evidence.</p>
         </div>
-        <span class="instance-badge">One chart instance</span>
+        <div class='version-stack' aria-label='Runtime versions'>
+          <span>ECharts <strong data-testid='echarts-version'>Loading</strong></span>
+          <span>ECharts-GL <strong>2.1.0</strong></span>
+        </div>
       </header>
 
-      <section class="control-surface" aria-labelledby="settings-heading">
-        <div class="control-heading">
-          <h2 id="settings-heading">Sharing settings</h2>
-          <p>Each option updates the same matrix without recreating the chart.</p>
-        </div>
-        <div class="settings-grid">
-          <label class="switch-control"><input type="checkbox" data-setting="shareVisualMap"><span class="switch-track" aria-hidden="true"></span><span>Shared visual map</span></label>
-          <label class="switch-control"><input type="checkbox" data-setting="shareLegend"><span class="switch-track" aria-hidden="true"></span><span>Shared legend</span></label>
-          <label class="switch-control"><input type="checkbox" data-setting="shareXAxis"><span class="switch-track" aria-hidden="true"></span><span>Shared X axis</span></label>
-          <label class="switch-control"><input type="checkbox" data-setting="shareYAxis"><span class="switch-track" aria-hidden="true"></span><span>Shared Y axis</span></label>
-          <label class="switch-control" data-zoom-control><input type="checkbox" data-setting="shareDataZoom"><span class="switch-track" aria-hidden="true"></span><span>Shared data zoom</span></label>
-        </div>
-        <p class="control-note" data-zoom-note>Shared data zoom is available when Shared X axis or Shared Y axis is enabled.</p>
-      </section>
+      <div class='workspace'>
+        <aside class='example-browser' aria-label='Example browser'>
+          <div class='browser-heading'>
+            <div><p class='section-kicker'>Catalog</p><h2>66 examples</h2></div>
+            <span id='visible-example-count' class='count-badge'>66</span>
+          </div>
+          <label class='search-field'>
+            <span>Search examples</span>
+            <input id='example-search' type='search' placeholder='ID, title, or family' autocomplete='off' />
+          </label>
+          <nav id='example-list' class='example-list'></nav>
+        </aside>
 
-      <p id="chart-status" class="status-line" role="status" aria-live="polite">Initializing matrix…</p>
-      <div class="chart-scroll">
-        <div id="matrix-chart" role="img" aria-label="A 3 by 4 matrix of observed and forecast scatter plots"></div>
+        <main class='experiment-workspace'>
+          <section class='experiment-heading card'>
+            <div class='experiment-copy'>
+              <div class='title-line'>
+                <span class='example-id' data-testid='example-id'>M01</span>
+                <span id='family-label' class='family-label'>Matrix Foundation</span>
+              </div>
+              <h2 id='example-title'>Loading example</h2>
+              <p id='example-question' class='question'></p>
+            </div>
+            <div class='heading-actions'>
+              <button id='run-example' class='button primary' type='button'>Run example</button>
+              <button id='reset-example' class='button' type='button'>Reset example</button>
+            </div>
+          </section>
+
+          <section class='control-panel card' aria-labelledby='controls-heading'>
+            <div class='section-heading'>
+              <div><p class='section-kicker'>Runtime configuration</p><h2 id='controls-heading'>Controls</h2></div>
+              <p id='sharing-summary' data-testid='sharing-summary' class='summary-text'>Individual state</p>
+            </div>
+            <div id='common-controls' class='control-grid'></div>
+            <div id='sharing-controls' class='control-grid sharing-grid'></div>
+            <div id='action-controls' class='action-row'></div>
+          </section>
+
+          <section class='chart-card card'>
+            <div class='chart-toolbar'>
+              <p id='chart-status' role='status' aria-live='polite'>Preparing example…</p>
+              <p>Selected cell: <strong id='selected-cell'>row-0:column-0</strong></p>
+            </div>
+            <div id='experiment-chart' aria-label='Interactive ECharts experiment'></div>
+          </section>
+
+          <section class='state-panel card' aria-labelledby='state-heading'>
+            <div class='section-heading'>
+              <div><p class='section-kicker'>Portable state</p><h2 id='state-heading'>Export and import</h2></div>
+              <div class='inline-actions'>
+                <button id='export-state' class='button small' type='button'>Export state</button>
+                <button id='import-state' class='button small' type='button'>Import state</button>
+              </div>
+            </div>
+            <textarea id='state-json' spellcheck='false' aria-label='State snapshot JSON' placeholder='Exported sharing and interactive state appears here.'></textarea>
+          </section>
+        </main>
+
+        <aside class='result-panel' aria-label='Experiment results'>
+          <section class='card metric-card'>
+            <p class='section-kicker'>Live resources</p><h2>Result panel</h2>
+            <dl class='metric-list'>
+              <div><dt>echarts.init calls</dt><dd data-testid='init-count' id='init-count'>0</dd></div>
+              <div><dt>Live instances</dt><dd data-testid='live-instances' id='live-instances'>0</dd></div>
+              <div><dt>Canvas roots</dt><dd id='canvas-count'>0</dd></div>
+              <div><dt>SVG roots</dt><dd id='svg-count'>0</dd></div>
+              <div><dt>WebGL contexts</dt><dd id='webgl-count'>0</dd></div>
+              <div><dt>DOM nodes</dt><dd id='dom-count'>0</dd></div>
+              <div><dt>Last setOption</dt><dd id='set-option-duration'>—</dd></div>
+              <div><dt>Last resize</dt><dd id='resize-duration'>—</dd></div>
+              <div><dt>Enlarged cell</dt><dd data-testid='enlarged-cell' id='enlarged-cell'>None</dd></div>
+            </dl>
+          </section>
+
+          <section class='card result-card'>
+            <p class='section-kicker'>Latest routing</p><h2>Events and actions</h2>
+            <p><span>Event</span><strong id='latest-event'>None</strong></p>
+            <p><span>Target</span><strong id='latest-target'>None</strong></p>
+            <p><span>Action</span><strong id='latest-action'>None</strong></p>
+          </section>
+
+          <section class='card result-card'>
+            <p class='section-kicker'>Capability result</p><h2 id='classification'>Inconclusive</h2>
+            <p id='classification-note' class='result-note'>Run the example and capture evidence.</p>
+            <div class='evidence-actions'>
+              <button id='export-option' class='button small' type='button'>Option snapshot</button>
+              <button id='export-image' class='button small' type='button'>Export image</button>
+              <button id='export-csv' class='button small' type='button'>Export CSV</button>
+              <button id='export-json' class='button small' type='button'>Raw JSON</button>
+            </div>
+          </section>
+
+          <section class='card result-card'>
+            <p class='section-kicker'>Measurement</p><h2>Five-iteration run</h2>
+            <p id='measurement-summary' class='result-note'>Warm-up has not run.</p>
+            <button id='start-measurement' class='button small' type='button'>Start measurement</button>
+          </section>
+        </aside>
       </div>
-    </main>
-    <script type="module" src="/src/main.ts"></script>
+    </div>
+    <script type='module' src='/src/main.ts'></script>
   </body>
 </html>
