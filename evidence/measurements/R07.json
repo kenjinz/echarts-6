@@ -1,18 +1,18 @@
 {
-  "capturedAt": "2026-10-03T05:29:58.414Z",
+  "capturedAt": "2026-10-03T05:32:13.959Z",
   "comparisons": [
     {
       "size": "1x1",
       "oneInstance": {
         "model": "one matrix instance",
-        "summary": "Init 12.50 ms · Update median 3.40 ms · Resize median 1.50 ms · 5 iterations",
+        "summary": "Init 13.40 ms · Update median 3.50 ms · Resize median 1.70 ms · 5 iterations",
         "instances": "1",
         "canvases": "1",
         "domNodes": "3"
       },
       "perCell": {
         "model": "one instance per cell",
-        "summary": "Init 6.80 ms · Update median 3.20 ms · Resize median 2.10 ms · 5 iterations",
+        "summary": "Init 7.10 ms · Update median 3.50 ms · Resize median 2.30 ms · 5 iterations",
         "instances": "1",
         "canvases": "1",
         "domNodes": "4"
@@ -22,14 +22,14 @@
       "size": "2x2",
       "oneInstance": {
         "model": "one matrix instance",
-        "summary": "Init 5.10 ms · Update median 6.40 ms · Resize median 3.00 ms · 5 iterations",
+        "summary": "Init 6.10 ms · Update median 6.80 ms · Resize median 4.00 ms · 5 iterations",
         "instances": "1",
         "canvases": "1",
         "domNodes": "3"
       },
       "perCell": {
         "model": "one instance per cell",
-        "summary": "Init 18.80 ms · Update median 11.70 ms · Resize median 6.50 ms · 5 iterations",
+        "summary": "Init 17.80 ms · Update median 14.80 ms · Resize median 9.80 ms · 5 iterations",
         "instances": "4",
         "canvases": "4",
         "domNodes": "16"
@@ -39,14 +39,14 @@
       "size": "3x3",
       "oneInstance": {
         "model": "one matrix instance",
-        "summary": "Init 8.30 ms · Update median 10.50 ms · Resize median 6.70 ms · 5 iterations",
+        "summary": "Init 10.50 ms · Update median 12.80 ms · Resize median 8.20 ms · 5 iterations",
         "instances": "1",
         "canvases": "1",
         "domNodes": "3"
       },
       "perCell": {
         "model": "one instance per cell",
-        "summary": "Init 33.80 ms · Update median 23.00 ms · Resize median 13.10 ms · 5 iterations",
+        "summary": "Init 42.70 ms · Update median 30.10 ms · Resize median 17.30 ms · 5 iterations",
         "instances": "9",
         "canvases": "9",
         "domNodes": "36"
@@ -56,14 +56,14 @@
       "size": "5x5",
       "oneInstance": {
         "model": "one matrix instance",
-        "summary": "Init 12.60 ms · Update median 25.00 ms · Resize median 15.10 ms · 5 iterations",
+        "summary": "Init 15.70 ms · Update median 32.40 ms · Resize median 19.20 ms · 5 iterations",
         "instances": "1",
         "canvases": "1",
         "domNodes": "3"
       },
       "perCell": {
         "model": "one instance per cell",
-        "summary": "Init 95.30 ms · Update median 67.10 ms · Resize median 37.00 ms · 5 iterations",
+        "summary": "Init 123.80 ms · Update median 90.70 ms · Resize median 67.00 ms · 5 iterations",
         "instances": "25",
         "canvases": "25",
         "domNodes": "100"
