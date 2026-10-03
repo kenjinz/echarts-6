@@ -39,3 +39,26 @@ The browser suite loads all 66 examples, exercises scope routing and interaction
 - CSV, JSON, and state export are application features independent of chart instance count.
 
 The runtime result panel reports live instances, visual roots, WebGL contexts, DOM nodes, action routing, timings, and the current provisional capability classification.
+
+## Presentation and engineering views
+
+Open the app without a query string for 20 guided lessons in six chapters.
+Each lesson contains selectable variants backed by the original engineering examples.
+
+- `/?lesson=D04&example=C06` opens the X zoom variant of the linked-zoom lesson.
+- `/?example=C06` opens the original engineering example and full controls.
+- `/?mode=engineering` opens the 66-example engineering catalog.
+
+Changing lessons or variants resets the chart. Switching catalog views for the
+same source preserves the active investigation. Browser back/forward restores
+the selected lesson/source with its default chart state, not a historical zoom.
+Use Export state and Import state to save and restore an investigation.
+
+Advanced controls and Technical details retain the original settings, metrics,
+and source IDs. Eight implementation-focused cases are linked from the technical
+appendix. Guided screenshots are in `evidence/presentation/`.
+
+Guides distinguish expected observations from verified results. Capability
+classifications remain provisional. CSV/JSON exports use the generated sample
+data model; camera actions do not establish drag synchronization; timing results
+are specific to the tested machine and workload.

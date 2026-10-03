@@ -70,7 +70,7 @@ Task order is 1 through 6. Tasks are sequential because the view, routing, and c
 
 **Produces:** `CHAPTERS: readonly Chapter[]`, `LESSONS: readonly Lesson[]`, `APPENDIX: readonly AppendixEntry[]`, and `GUIDES: Readonly<Record<string, Variant>>` with the following contracts.
 
-- [ ] **Step 1: Write the failing catalog integrity and control-compatibility tests.**
+- [x] **Step 1: Write the failing catalog integrity and control-compatibility tests.**
 
 ```ts
 import { expect, it } from 'vitest';
@@ -112,13 +112,13 @@ it('has actionable guidance and only declares source-supported sharing controls'
 
 Add explicit assertions that G04 warns about programmatic versus drag synchronization, R03 describes generated sample data, and R07 describes machine-specific measurements. These protect material limitations rather than copy punctuation.
 
-- [ ] **Step 2: Run the focused test and observe missing-module failures.**
+- [x] **Step 2: Run the focused test and observe missing-module failures.**
 
 ```powershell
 npm.cmd test -- tests/presentationCatalog.test.ts
 ```
 
-- [ ] **Step 3: Define the types.**
+- [x] **Step 3: Define the types.**
 
 ```ts
 import type { SharingElement } from '../core/types';
@@ -157,7 +157,7 @@ export type Selection =
 export interface Resolution { selection: Selection; notice?: string; }
 ```
 
-- [ ] **Step 4: Populate catalog metadata using the approved titles/questions and this exact mapping.**
+- [x] **Step 4: Populate catalog metadata using the approved titles/questions and this exact mapping.**
 
 ```ts
 const lessonSources = [
@@ -186,7 +186,7 @@ const lessonSources = [
 
 Use the six chapter titles from the specification, preserving order. Populate `Lesson.title` and `Lesson.question` with its exact table title and opening question. Resolve variants from `GUIDES` in source order, with the first as default. Give appendix entries the registry title at render time and these reasons: M01 direct matrix coordinates; M03 mixed axis types; M06 component placement; C12 axis compatibility; P06 matrix subregions; P07 multiple nested grids; P08 calculated pixel layout; G01 native 3D placement investigation.
 
-- [ ] **Step 5: Author the 58 guide records from the following source-specific scripts.**
+- [x] **Step 5: Author the 58 guide records from the following source-specific scripts.**
 
 Each semicolon-delimited action is one step, except a final grouped observation may remain in the second step. Expand abbreviations into the guided labels. The label identifies the source variant in plain language, such as `X zoom` for C06. Keep each record to two or three steps. Expected text must say what to examine, not mark the source as passed. Set `limitation` from the source-specific limitation in `evidence/final-scorecard.md`, using the explicit qualifications in this table where present. Do not mechanically generate the same steps from the example title.
 
@@ -260,7 +260,7 @@ Primary control policies use these exact rules:
 - Primary utility panels: events for M07/C13/S08; state for R01; exports for M10/R02/R03; metrics for R04/G10/R05/R06/R08; metrics and measurement for R07. Other utilities remain in Technical details. Export controls themselves are source-specific: image for M10/R02, CSV/raw JSON for R03.
 - Every omitted existing control is reachable through Advanced controls or Technical details. Rows/columns defaults and experiment data remain unchanged.
 
-- [ ] **Step 6: Run the catalog tests and TypeScript production build, then commit.**
+- [x] **Step 6: Run the catalog tests and TypeScript production build, then commit.**
 
 ```powershell
 npm.cmd test -- tests/presentationCatalog.test.ts
@@ -295,7 +295,7 @@ export function switchMode(selection: Selection, mode: PresentationMode): Resolu
 export function selectionForImport(selection: Selection, exampleId: string): Selection;
 ```
 
-- [ ] **Step 1: Write route, fallback, search, and transition tests.**
+- [x] **Step 1: Write route, fallback, search, and transition tests.**
 
 ```ts
 import { expect, it } from 'vitest';
@@ -343,13 +343,13 @@ it('keeps source on mode switches and routes unrelated imports to engineering', 
 
 Also test empty `lesson=` and `example=` as invalid IDs, encoded unexpected text as harmless unknown IDs, round trips for every lesson/variant and engineering source, and unknown mode without an example as the normal guided default. A present lesson parameter takes precedence over `mode=engineering`; this removes ambiguity for conflicting URLs.
 
-- [ ] **Step 2: Run the focused test and observe the missing module.**
+- [x] **Step 2: Run the focused test and observe the missing module.**
 
 ```powershell
 npm.cmd test -- tests/presentationNavigation.test.ts
 ```
 
-- [ ] **Step 3: Implement pure resolution and serialization.**
+- [x] **Step 3: Implement pure resolution and serialization.**
 
 ```ts
 import { EXAMPLES } from '../app/experimentRegistry';
@@ -417,7 +417,7 @@ export function selectionForImport(selection: Selection, exampleId: string): Sel
 
 These functions do not touch browser history or reset charts. Unknown snapshot IDs are rejected by the caller before `selectionForImport`.
 
-- [ ] **Step 4: Run the tests and commit the pure navigation module.**
+- [x] **Step 4: Run the tests and commit the pure navigation module.**
 
 ```powershell
 npm.cmd test -- tests/presentationNavigation.test.ts tests/presentationCatalog.test.ts
@@ -433,7 +433,7 @@ git commit -m 'feat: define guided and engineering navigation contracts'
 
 **Produces:** `LatestRequest.begin(): number`, `LatestRequest.isCurrent(token: number): boolean`; `prepareSnapshot(exampleId: string, imported?: AppStateSnapshot): AppStateSnapshot`; initialization that cannot commit stale work. These are the only lifecycle refactors required before presentation integration.
 
-- [ ] **Step 1: Add failing tests for stale requests and imported state.**
+- [x] **Step 1: Add failing tests for stale requests and imported state.**
 
 ```ts
 // tests/latestRequest.test.ts
@@ -476,13 +476,13 @@ it('does not alias or mutate imported snapshots', () => {
 });
 ```
 
-- [ ] **Step 2: Run these tests to confirm missing implementations.**
+- [x] **Step 2: Run these tests to confirm missing implementations.**
 
 ```powershell
 npm.cmd test -- tests/latestRequest.test.ts tests/foundationState.test.ts
 ```
 
-- [ ] **Step 3: Add guard and snapshot preparation, then adopt them in main.**
+- [x] **Step 3: Add guard and snapshot preparation, then adopt them in main.**
 
 ```ts
 // src/core/latestRequest.ts
@@ -536,7 +536,7 @@ try {
 
 Move the existing body into the indicated guarded region; do not leave a second unguarded `requestAnimationFrame(updateMetrics)`. No asynchronous operation may dispose charts or update selection metadata after an await without checking the generation. Set `glLoaded` only after successful import. Invalidate pending requests on `pagehide`. Keep Run/renderer/dimension changes routed through the same guard. Later mode-only changes must not invalidate a chart load unless they actually change the source.
 
-- [ ] **Step 4: Run unit tests and existing browser coverage for imports and GL before committing.**
+- [x] **Step 4: Run unit tests and existing browser coverage for imports and GL before committing.**
 
 ```powershell
 npm.cmd test
@@ -572,7 +572,7 @@ export interface PresentationView {
 export function createPresentationView(callbacks: PresentationCallbacks): PresentationView;
 ```
 
-- [ ] **Step 1: Add failing browser tests for guided entry, variant rendering, and engineering compatibility.**
+- [x] **Step 1: Add failing browser tests for guided entry, variant rendering, and engineering compatibility.**
 
 ```ts
 import { expect, test } from '@playwright/test';
@@ -617,13 +617,13 @@ test('opens every guided lesson with the correct default source', async ({ page 
 });
 ```
 
-- [ ] **Step 2: Run the focused browser suite and observe missing guided controls.**
+- [x] **Step 2: Run the focused browser suite and observe missing guided controls.**
 
 ```powershell
 npm.cmd run test:e2e -- tests/e2e/presentation.spec.ts
 ```
 
-- [ ] **Step 3: Add semantic guide markup while retaining current chart/control IDs.**
+- [x] **Step 3: Add semantic guide markup while retaining current chart/control IDs.**
 
 Insert a mode selector in the header and a guide before the control panel:
 
@@ -663,7 +663,7 @@ Place `#guided-utilities` and `#technical-details` after the chart. Move the exi
 
 Give the catalog heading an ID and update it to `20 lessons` or `66 examples`. Add an appendix disclosure with eight engineering links and their reasons below the guided lesson list. Empty search results display `No lessons match this search.` Count only lessons in guided mode. Main heading/title/question show lesson text in guided mode; active engineering source ID appears in technical details.
 
-- [ ] **Step 4: Implement the view using native DOM APIs and callbacks.**
+- [x] **Step 4: Implement the view using native DOM APIs and callbacks.**
 
 In `createPresentationView`, obtain required elements once, register listeners once, and retain the current rendered `Selection` for callbacks. Use `textContent` for all strings. Each guided navigation button has `data-testid="lesson-button"`, `data-lesson-id`, wrapped ID/title spans, and `aria-current="page"` only when active. Group by `CHAPTERS` order, omit empty groups after filtering, and keep previous/next based on the complete `LESSONS` array.
 
@@ -716,7 +716,7 @@ Common fields are selected using their child's `data-common`, sharing fields by 
 
 Move utility panels using the retained node anchors, not cloned HTML. Raw option snapshots stay technical even when customer exports are primary. Render source-specific expected/limitation text next to primary controls, with technical status always reachable. The existing ResizeObserver handles container-size changes; disclosure toggle can additionally schedule `chart.resize()` through a callback in main if visual checks show a missed layout update, never `echarts.init`.
 
-- [ ] **Step 5: Integrate main with one selection function.**
+- [x] **Step 5: Integrate main with one selection function.**
 
 Rename the existing `renderNavigation` to `renderEngineeringNavigation`, and retain its exact engineering behavior. Store one `selection: Selection`, `navigationNotice: string | undefined`, and `searchByMode: Record<PresentationMode, string>` in main. Do not add a second chart-state store. Rename `ELEMENT_LABELS` to `ENGINEERING_ELEMENT_LABELS` and derive guided text with overrides:
 
@@ -767,7 +767,7 @@ Remove URL mutation from `selectExample`; before its `await initializeCharts()`,
 
 View callbacks call `navigate` for source/lesson changes. Mode callback first calls `captureAllChartState()`, resolves `switchMode`, and passes `{ history: 'push', preserve: true }`. Existing engineering list click handling calls `navigate` with engineering selection; guided buttons use different `data-lesson-id` so the old listener does not select twice. Replace the old search listener with one that updates `searchByMode` and calls only `view.render`, never `selectExample`.
 
-- [ ] **Step 6: Add minimal responsive styles and run the new and existing browser tests.**
+- [x] **Step 6: Add minimal responsive styles and run the new and existing browser tests.**
 
 ```css
 [hidden] { display: none !important; }
@@ -806,7 +806,7 @@ git commit -m 'feat: add guided lesson navigation and contextual controls'
 
 **Produces:** All entry points use the same navigation/state policy; back/forward and mode switches cannot desynchronize guide and chart.
 
-- [ ] **Step 1: Add failing browser tests for search/history/reset.**
+- [x] **Step 1: Add failing browser tests for search/history/reset.**
 
 ```ts
 test('search preserves chart state and history changes reset source state', async ({ page }) => {
@@ -846,7 +846,7 @@ test('mode-only switches preserve interaction state and independent search text'
 });
 ```
 
-- [ ] **Step 2: Add import and asynchronous failure tests.**
+- [x] **Step 2: Add import and asynchronous failure tests.**
 
 Use the existing snapshot test hook to prepare real valid version-1 fixtures. Open Technical details to reach snapshot controls outside D18. Test these four concrete cases:
 
@@ -904,13 +904,13 @@ test('the newest lesson wins when a prior GL module request completes late', asy
 
 Add a fresh-page test aborting that request, expect a visible error, then select D01 and expect successful M02 rendering without an unhandled page error. When investigating interception issues, inspect Playwright request URLs; do not replace the test with a timing-only sleep.
 
-- [ ] **Step 3: Run the focused tests and observe the missing history/import behavior.**
+- [x] **Step 3: Run the focused tests and observe the missing history/import behavior.**
 
 ```powershell
 npm.cmd run test:e2e -- tests/e2e/presentation.spec.ts
 ```
 
-- [ ] **Step 4: Centralize remaining entry points and preserve valid state.**
+- [x] **Step 4: Centralize remaining entry points and preserve valid state.**
 
 ```ts
 window.addEventListener('popstate', () => {
@@ -939,7 +939,7 @@ requireElement<HTMLButtonElement>('import-state').addEventListener('click', asyn
 
 Parse and resolve before changing selection or browser history. Do not clear the snapshot textarea on reset; D18 needs to import its saved text. Preserve disclosure open state during a same-lesson import so the next action is reachable. Render notices for invalid URLs and appendix-to-guided reset via `#navigation-notice`; use textContent and toggle `hidden`. Recheck stale-load errors and initialization ownership; Task 3's guard must cover every call path introduced by the view.
 
-- [ ] **Step 5: Verify the complete guided and engineering interaction suites and commit.**
+- [x] **Step 5: Verify the complete guided and engineering interaction suites and commit.**
 
 ```powershell
 npm.cmd test
@@ -957,7 +957,7 @@ git commit -m 'feat: preserve presentation context through history and state res
 
 **Produces:** Verified scope/visibility/fixed-coupling/export behavior from guided controls, reviewed wide/constrained layouts, documented links and limitations.
 
-- [ ] **Step 1: Add tests for meaningful guided interactions and control availability.**
+- [x] **Step 1: Add tests for meaningful guided interactions and control availability.**
 
 ```ts
 test('guided row zoom changes only the selected row', async ({ page }) => {
@@ -999,7 +999,7 @@ test('customer exports are reachable without technical details', async ({ page }
 
 Add a test that opening/closing Advanced chart settings neither changes `init-count` nor removes controls; change an advanced seed to prove delegated listeners still operate after relocation. In a guided D04 variant, close the advanced disclosure, tab through the top controls, and assert focus never reaches its renderer/seed descendants. Search for each of the 58 source IDs and assert exactly its parent lesson is shown. Exercise at least one non-default variant in every chapter (C07, S05, P03, G05, R03, G10). Check that `#classification` always stays Inconclusive when technical details are open.
 
-- [ ] **Step 2: Add screenshots and dimension checks in a separate evidence test.**
+- [x] **Step 2: Add screenshots and dimension checks in a separate evidence test.**
 
 ```ts
 import { expect, test } from '@playwright/test';
@@ -1028,7 +1028,7 @@ test('captures guided layouts at wide and constrained sizes', async ({ page }) =
 
 At 390px add a smoke check for usable mode/variant selectors and horizontal chart scrolling, without requiring a desktop chart to shrink to phone width. Take an additional screenshot with Technical details open and one with Advanced controls open at 900px. The details node must remain within the page content width; overflow inside the chart is acceptable.
 
-- [ ] **Step 3: Run new checks, fix observed UI failures, and inspect screenshots.**
+- [x] **Step 3: Run new checks, fix observed UI failures, and inspect screenshots.**
 
 ```powershell
 npm.cmd run test:e2e -- tests/e2e/presentation.spec.ts tests/e2e/presentationEvidence.spec.ts
@@ -1048,7 +1048,7 @@ body[data-presentation-mode='guided'] .chart-card { overflow-x: auto; }
 
 Do not update native-capacity scorecard verdicts after these presentation checks. Rendering and domain acceptance still require their own evidence.
 
-- [ ] **Step 4: Document the two entry points, reset semantics, and evidence policy.**
+- [x] **Step 4: Document the two entry points, reset semantics, and evidence policy.**
 
 Add the following README section near Run:
 
@@ -1077,7 +1077,7 @@ data model; camera actions do not establish drag synchronization; timing results
 are specific to the tested machine and workload.
 ```
 
-- [ ] **Step 5: Run final verification and isolate generated evidence changes.**
+- [x] **Step 5: Run final verification and isolate generated evidence changes.**
 
 ```powershell
 npm.cmd test
