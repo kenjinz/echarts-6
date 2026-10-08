@@ -87,7 +87,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "exampleId": "C02",
     "label": "Share X ranges",
     "steps": [
-      "Select a panel and set X range scope to Individual.",
+      "Select a panel and set X axis sharing to Individual.",
       "Change X range.",
       "Repeat with Per row."
     ],
@@ -98,7 +98,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "exampleId": "C03",
     "label": "Share Y ranges",
     "steps": [
-      "Select a panel and set Y range scope to Individual.",
+      "Select a panel and set Y axis sharing to Individual.",
       "Change Y range.",
       "Repeat with Per column."
     ],
@@ -109,7 +109,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "exampleId": "C04",
     "label": "Mix X and Y scopes",
     "steps": [
-      "Set X range scope to All cells and Y range scope to Individual.",
+      "Set X axis sharing to All cells and Y axis sharing to Individual.",
       "Change X and then Y range."
     ],
     "expected": "X and Y target groups remain independent.",
@@ -119,17 +119,27 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "exampleId": "C05",
     "label": "Show axes at the edges",
     "steps": [
-      "Inspect outer axis labels.",
-      "Change X range with All cells scope."
+      "Both X and Y axes start shared across All cells. Wheel over any plot or move a shared zoom slider.",
+      "Inspect the closely spaced plots and outer axis labels. Use Advanced controls to change the shared axis sides."
     ],
-    "expected": "Repeated labels are hidden; underlying axes remain separate.",
-    "limitation": "One physical axis is not reused across grids"
+    "expected": "Each shared axis has one range and zoom state. Wheel zoom or drag its slider to update the entire group.",
+    "limitation": "Hidden coordinate axes render the shared group state; interior labels are hidden."
+  },
+  "C17": {
+    "exampleId": "C17",
+    "label": "Detached shared axes",
+    "steps": [
+      "Compare the plots using the light grid lines and the shared axes outside the plotting area.",
+      "Zoom any plot, then change the shared axis sides in Advanced controls."
+    ],
+    "expected": "Shared axes sit 16 pixels away from every plot, including the first row and column. All plots use the same range and zoom state.",
+    "limitation": "Detached axes are demonstrated only in this variant; other variants keep their existing axis placement."
   },
   "C06": {
     "exampleId": "C06",
     "label": "Link X zoom",
     "steps": [
-      "Set X linked zoom scope to Individual and change X linked zoom.",
+      "Set X axis sharing to Individual and change X linked zoom.",
       "Repeat with Per row.",
       "Reset the example."
     ],
@@ -140,7 +150,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "exampleId": "C07",
     "label": "Link Y zoom",
     "steps": [
-      "Set Y linked zoom scope to Individual and change Y linked zoom.",
+      "Set Y axis sharing to Individual and change Y linked zoom.",
       "Repeat with Per column.",
       "Reset the example."
     ],
@@ -189,16 +199,6 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "expected": "The line should remain when its symbols are hidden.",
     "limitation": "Not a legend-only behavior"
   },
-  "S07": {
-    "exampleId": "S07",
-    "label": "Choose visible spatial data",
-    "steps": [
-      "Change spatial series visibility.",
-      "Restore it and change point-symbol visibility."
-    ],
-    "expected": "Distinguish whole-series visibility from symbol rendering.",
-    "limitation": "Point visibility requires a chart update from the application."
-  },
   "M07": {
     "exampleId": "M07",
     "label": "Identify the selected panel",
@@ -231,27 +231,6 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "expected": "Observe panel restoration; local zoom is not exposed by this source, so zoom preservation remains unverified.",
     "limitation": "Matrix headers remain in state for restoration. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
   },
-  "S08": {
-    "exampleId": "S08",
-    "label": "Inspect spatial items",
-    "steps": [
-      "Hover a spatial item.",
-      "Select it.",
-      "Inspect event and item identity."
-    ],
-    "expected": "Selection/event parity remains subject to manual review.",
-    "limitation": "Disabled mappings need manual interaction review"
-  },
-  "S01": {
-    "exampleId": "S01",
-    "label": "Boundaries and data regions",
-    "steps": [
-      "Identify the circular boundary and rectangular regions.",
-      "Resize the browser and inspect the edge."
-    ],
-    "expected": "Inspect geometry and clipping; this variant currently has no local zoom control.",
-    "limitation": "Representative geometry only. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
-  },
   "S02": {
     "exampleId": "S02",
     "label": "Screen-sized and domain-sized shapes",
@@ -259,8 +238,8 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Compare a point symbol with a rectangular region.",
       "Resize the browser."
     ],
-    "expected": "Compare screen-sized symbols and domain-sized regions during resize; zoom is not configured in this source and remains unverified.",
-    "limitation": "Visual zoom comparison pending. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
+    "expected": "Point markers stay the same screen size while rectangles follow the X/Y coordinate scale during resize and local toolbox zoom.",
+    "limitation": "Shape dimensions use data units; point-marker dimensions use pixels."
   },
   "S09": {
     "exampleId": "S09",
@@ -271,7 +250,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
       "Restore the panel."
     ],
     "expected": "Inspect aspect ratio and clipping visually.",
-    "limitation": "Exact square-ratio pixel audit pending. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
+    "limitation": "Equal X/Y scale is demonstrated using matching numeric ranges and a square plotting area."
   },
   "S04": {
     "exampleId": "S04",
@@ -303,28 +282,6 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     ],
     "expected": "Arrows respond to application inputs for the intended group.",
     "limitation": "Vector controls belong to the application, rather than the chart library."
-  },
-  "S06": {
-    "exampleId": "S06",
-    "label": "Link spatial ranges and zoom",
-    "steps": [
-      "Change X linked zoom for Individual.",
-      "Repeat with Per row.",
-      "Compare the Y range."
-    ],
-    "expected": "Spatial sharing should not leak into unrelated dimensions.",
-    "limitation": "External scope controls required"
-  },
-  "S10": {
-    "exampleId": "S10",
-    "label": "Keep selection through updates",
-    "steps": [
-      "Select a spatial item.",
-      "Regenerate data.",
-      "Add a row and inspect prior selection."
-    ],
-    "expected": "Evaluate selection persistence; local zoom and the scope controls from S06 are not present here.",
-    "limitation": "Application state owns restoration. Local zoom is not configured in this variant; zoom-related acceptance remains pending."
   },
   "P01": {
     "exampleId": "P01",
@@ -371,7 +328,7 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "exampleId": "P09",
     "label": "Link main ranges across panels",
     "steps": [
-      "Set main X range scope to Per row and change it.",
+      "Set main X axis sharing to Per row and change it.",
       "Inspect top profiles and unaffected rows."
     ],
     "expected": "Optional cross-panel sharing preserves required local coupling.",
@@ -462,11 +419,11 @@ const copy: Record<string, Omit<Variant, 'controls'>> = {
     "exampleId": "G04",
     "label": "Apply shared camera settings",
     "steps": [
-      "Change camera with Individual scope.",
-      "Repeat with All cells."
+      "Drag a plot to rotate its camera with Individual scope.",
+      "Repeat with Per row or All cells to rotate the camera group together."
     ],
-    "expected": "Programmatic changes do not prove mouse-drag synchronization.",
-    "limitation": "Programmatic camera changes do not prove mouse-drag synchronization. Camera-event acceptance remains pending."
+    "expected": "Mouse rotation, panning, and camera distance use the selected camera-sharing group.",
+    "limitation": "Shared camera settings are synchronized by the application using ECharts-GL camera events."
   },
   "G05": {
     "exampleId": "G05",
@@ -614,15 +571,14 @@ function controlsFor(id: string): ControlPolicy {
   if (['R07', 'G10'].includes(id)) common.push('instanceModel');
   const narrowed: Record<string, readonly SharingElement[]> = {
     G06: [], G07: ['xRange', 'yRange'], G05: ['zRange', 'visualMap'],
-    S07: ['seriesVisibility', 'symbolVisibility'], P11: ['legendSelection', 'visualMap']
+    P11: ['legendSelection', 'visualMap']
   };
   const sharing = [...new Set(source.sharing.filter(c => c.fixed || !narrowed[id] || narrowed[id].includes(c.element)).map(c => c.element))];
   const actions: PanelAction[] = [];
-  if (['M08', 'C15', 'S10'].includes(id)) actions.push('add-row', 'remove-row', 'add-column', 'remove-column');
-  if (id === 'S10') actions.push('regenerate');
+  if (['M08', 'C15'].includes(id)) actions.push('add-row', 'remove-row', 'add-column', 'remove-column');
   if (['C14', 'S09', 'G09'].includes(id)) actions.push('enlarge', 'restore');
   const utilities: UtilityPanel[] = [];
-  if (['M07', 'C13', 'S08'].includes(id)) utilities.push('events');
+  if (['M07', 'C13'].includes(id)) utilities.push('events');
   if (id === 'R01') utilities.push('state');
   if (['M10', 'R02', 'R03'].includes(id)) utilities.push('exports');
   if (['R04', 'G10', 'R05', 'R06', 'R08', 'R07'].includes(id)) utilities.push('metrics');

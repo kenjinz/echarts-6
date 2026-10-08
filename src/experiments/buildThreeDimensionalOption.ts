@@ -37,6 +37,15 @@ function percent(value: number): string {
   return `${value.toFixed(2)}%`;
 }
 
+export function threeDimensionalCellBox(context: TwoDimensionalBuildContext, cell: CellDefinition) {
+  const enlarged = Boolean(context.snapshot.interactive.enlargedCellId);
+  const rows = enlarged ? 1 : context.snapshot.rows;
+  const columns = enlarged ? 1 : context.snapshot.columns;
+  const width = (92 - 2 * (columns - 1)) / columns;
+  const height = (90 - 2 * (rows - 1)) / rows;
+  return { left: 4 + (enlarged ? 0 : cell.column) * (width + 2), top: 5 + (enlarged ? 0 : cell.row) * (height + 2), width, height };
+}
+
 function absoluteGrid(
   cell: CellDefinition,
   rows: number,
@@ -149,6 +158,7 @@ function addSeries(
       : 'individual';
   const groupKey = scopeKey(cell, legendScope);
   const axisIndexes = {
+    grid3DIndex: index,
     xAxis3DIndex: index,
     yAxis3DIndex: index,
     zAxis3DIndex: index
@@ -212,10 +222,27 @@ export function buildThreeDimensionalOption(
       snapshot.columns,
       snapshot.interactive.camera[cell.id]
     );
-    return enlargedCellId
+    const viewport = enlargedCellId
       ? { ...grid, left: '4.00%', top: '5.00%', width: '92.00%', height: '90.00%' }
       : grid;
+    const box = threeDimensionalCellBox(context, cell);
+    if (example.id === 'G07') Object.assign(viewport, {
+      left: percent(box.left), top: percent(box.top + box.height * .4),
+      width: percent(box.width * .67), height: percent(box.height * .58)
+    });
+    else if (example.sharing.some(capability => capability.element === 'visualMap')) Object.assign(viewport, {
+      top: percent(box.top + box.height * .12), width: percent(box.width * .88), height: percent(box.height * .86)
+    });
+    return viewport;
   });
+  const titles = renderCells.map(cell => {
+    const box = threeDimensionalCellBox(context, cell);
+    return { id: componentId('title', cell), text: cell.title, left: percent(box.left), top: percent(box.top - 3), textStyle: { fontSize: 11, color: '#64748b' } };
+  });
+  const legendPosition = (cell: CellDefinition) => {
+    const box = threeDimensionalCellBox(context, cell);
+    return { left: percent(box.left), top: percent(box.top), width: percent(box.width - 1), type: 'scroll', formatter: (name: string) => name.split('/')[0], textStyle: { fontSize: 9 }, itemWidth: 12, itemHeight: 9 };
+  };
   const xAxis3D: Component[] = [];
   const yAxis3D: Component[] = [];
   const zAxis3D: Component[] = [];
@@ -245,9 +272,7 @@ export function buildThreeDimensionalOption(
           selected[name.split('/')[0]] !== false &&
           snapshot.interactive.seriesVisibility[group[0].id] !== false
         ])),
-        top: 8 + index * 22,
-        right: 8,
-        textStyle: { fontSize: 9 }
+        ...legendPosition(group[0])
       });
     });
   }
@@ -257,12 +282,15 @@ export function buildThreeDimensionalOption(
     const scope = snapshot.sharing.visualMap;
     groupCells(renderCells, scope).forEach((group, index) => {
       const range = snapshot.interactive.colorScaleRange[group[0].id] ?? [-4, 6];
+      const box = threeDimensionalCellBox(context, group[0]);
       visualMap.push({
         id: `visualMap3D/group-${index}/${scopeKey(group[0], scope)}`,
         type: 'continuous',
         min: range[0],
         max: range[1],
         dimension: 2,
+        left: percent(box.left + box.width * .94), top: percent(box.top + box.height * .35),
+        itemWidth: 9, itemHeight: 65, textStyle: { fontSize: 9 },
         seriesId: group.flatMap((cell) => series
           .filter((entry) => String(entry.id).includes(cell.id))
           .map((entry) => entry.id))
@@ -275,15 +303,37 @@ export function buildThreeDimensionalOption(
     const auxiliaryGrids = list(base.grid).filter((grid) =>
       String(grid.id).endsWith('/top') || String(grid.id).endsWith('/right')
     );
+    for (const grid of auxiliaryGrids) {
+      const cell = renderCells.find(cell => String(grid.id).includes(cell.id))!;
+      const box = threeDimensionalCellBox(context, cell);
+      const top = String(grid.id).endsWith('/top');
+      for (const key of ['coordinateSystem', 'matrixId', 'coord', 'right', 'bottom']) delete grid[key];
+      Object.assign(grid, {
+        left: percent(box.left + box.width * (top ? .08 : .76)),
+        top: percent(box.top + box.height * (top ? .18 : .46)),
+        width: percent(box.width * (top ? .55 : .14)),
+        height: percent(box.height * (top ? .13 : .44)), outerBoundsMode: 'none'
+      });
+    }
     const auxiliaryXAxes = list(base.xAxis).filter((axis) =>
       String(axis.id).endsWith('/top') || String(axis.id).endsWith('/right')
     );
     const auxiliaryYAxes = list(base.yAxis).filter((axis) =>
       String(axis.id).endsWith('/top') || String(axis.id).endsWith('/right')
     );
+    for (const axis of auxiliaryXAxes.filter(axis => String(axis.id).endsWith('/right'))) {
+      const cell = renderCells.find(cell => String(axis.id).includes(cell.id))!;
+      const range = snapshot.interactive.axisRanges[cell.id]?.rightX ?? [0, 40];
+      axis.min = range[0]; axis.max = range[1];
+    }
     const auxiliarySeries = list(base.series).filter((entry) =>
       String(entry.id).endsWith('/top') || String(entry.id).endsWith('/right')
     );
+    // Marginal coordinates must use the same physical X/Y domain as the 3D data.
+    for (const entry of auxiliarySeries) {
+      const top = String(entry.id).endsWith('/top');
+      entry.data = [[-5, 12], [-2, 26], [0, 18], [3, 34], [5, 20]].map(([position, value]) => top ? [position, value] : [value, position]);
+    }
     const combinedSeries = [...auxiliarySeries, ...series];
     const fixedZoom = list(base.dataZoom)
       .filter((zoom) => String(zoom.id).includes('/fixed-'))
@@ -313,14 +363,15 @@ export function buildThreeDimensionalOption(
           selected[name.split('/')[0]] !== false &&
           snapshot.interactive.seriesVisibility[group[0].id] !== false
         ])),
-        top: 8 + index * 22,
-        right: 8,
-        textStyle: { fontSize: 9 }
+        ...legendPosition(group[0])
       };
     });
 
     return {
       ...base,
+      matrix: undefined,
+      title: titles,
+      toolbox: [],
       grid: auxiliaryGrids,
       xAxis: auxiliaryXAxes,
       yAxis: auxiliaryYAxes,
@@ -337,11 +388,12 @@ export function buildThreeDimensionalOption(
 
   return {
     animation: false,
+    title: useNativeMatrixAttempt ? [{ text: 'G01: native matrix placement is unsupported', subtext: 'The four 3D views overlap. Open G02 for working panel placement.', left: 16, top: 8, textStyle: { fontSize: 14 }, subtextStyle: { fontSize: 11 } }] : titles,
     matrix: useNativeMatrixAttempt
       ? {
           id: 'matrix/main',
           left: 40,
-          top: 40,
+          top: 70,
           right: 40,
           bottom: 40,
           x: { data: Array.from({ length: snapshot.columns }, (_, index) => `Column ${index + 1}`) },

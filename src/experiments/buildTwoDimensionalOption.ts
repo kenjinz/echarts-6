@@ -7,6 +7,7 @@ import type {
   SharingScope
 } from '../core/types';
 import { createSeededRandom } from '../data/random';
+import { readAxisState, sharedAxisScope, supportsSharedAxis } from '../sharing/sharedAxes';
 
 type Component = Record<string, unknown>;
 
@@ -75,13 +76,17 @@ export function buildPerCellCartesianOption(
     title: { text: cell.title, left: 'center', textStyle: { fontSize: 11 } },
     tooltip: { trigger: 'axis' },
     legend: {
+      type: 'scroll',
+      left: 6, right: 6, bottom: 4,
+      formatter: (name: string) => name.split('/')[0],
       data: [`Observed/${cell.id}`, `Forecast/${cell.id}`],
       selected: {
         [`Observed/${cell.id}`]: snapshot.interactive.legendSelections[cell.id]?.Observed !== false,
         [`Forecast/${cell.id}`]: snapshot.interactive.legendSelections[cell.id]?.Forecast !== false
       }
     },
-    grid: { left: 42, right: 18, top: 44, bottom: 34 },
+    toolbox: { right: 8, top: 22, itemSize: 12, feature: { dataZoom: {}, restore: {}, saveAsImage: {} } },
+    grid: { left: 42, right: 18, top: 56, bottom: 48 },
     xAxis: { id: componentId('xAxis', cell), type: 'value', min: range?.x?.[0] ?? 0, max: range?.x?.[1] ?? 24 },
     yAxis: { id: componentId('yAxis', cell), type: 'value', min: range?.y?.[0] ?? 0, max: range?.y?.[1] ?? 50 },
     series: [
@@ -106,6 +111,8 @@ export function buildPerCellCartesianOption(
 
 function makeMatrix(context: TwoDimensionalBuildContext): Component {
   const { example, snapshot } = context;
+  const compact = usesSharedAxes(context) && !snapshot.interactive.enlargedCellId;
+  const axisClearance = example.id === 'C17' ? 16 : 0;
   const columnCount = example.id === 'P06' ? snapshot.columns * 2 : snapshot.columns;
   const rowCount = example.id === 'P06' ? snapshot.rows * 2 : snapshot.rows;
   const columnData = Array.from({ length: columnCount }, (_, index) => {
@@ -125,17 +132,18 @@ function makeMatrix(context: TwoDimensionalBuildContext): Component {
 
   return {
     id: 'matrix/main',
-    left: 72,
-    top: 62,
-    right: 52,
-    bottom: 58,
-    x: { data: columnData, levelSize: example.id === 'C16' ? 58 : 34 },
-    y: { data: rowData, levelSize: example.id === 'C16' ? 116 : 72 },
+    left: 72 + axisClearance,
+    top: (compact ? 84 : 62) + axisClearance,
+    right: 52 + axisClearance,
+    bottom: 58 + axisClearance,
+    backgroundStyle: { borderWidth: 0 },
+    x: { data: columnData, show: !compact, levelSize: compact ? 0 : example.id === 'C16' ? 58 : 34, itemStyle: { borderWidth: 0 }, dividerLineStyle: { width: 0 } },
+    y: { data: rowData, show: !compact, levelSize: compact ? 0 : example.id === 'C16' ? 116 : 72, itemStyle: { borderWidth: 0 }, dividerLineStyle: { width: 0 } },
     body: {
       data: example.id === 'M05'
         ? [{ coord: [0, 0], value: 'Body label' }, { coord: [[0, 1], [1, 1]], value: 'Merged body' }]
         : [],
-      itemStyle: { borderColor: '#d7dde5', borderWidth: 1 }
+      itemStyle: { borderWidth: 0 }
     },
     triggerEvent: true
   };
@@ -179,8 +187,8 @@ function pushAxes(
   const spatialDomain: [number, number] = context.example.id === 'G07' ? [-6, 6] : [-10, 10];
   const defaultX: [number, number] = spatial || (compound && plot !== 'right') ? spatialDomain : [0, 24];
   const defaultY: [number, number] = spatial || (compound && plot !== 'top') ? spatialDomain : [0, 50];
-  const xRange = (plot === 'right' ? range?.rightX : range?.x) ?? defaultX;
-  const yRange = (plot === 'top' ? range?.topY : range?.y) ?? defaultY;
+  const xRange = (plot === 'right' ? range?.rightX : readAxisState(context.snapshot, context.example, cell, 'x').range) ?? defaultX;
+  const yRange = (plot === 'top' ? range?.topY : readAxisState(context.snapshot, context.example, cell, 'y').range) ?? defaultY;
   parts.xAxis.push({
     id: componentId('xAxis', cell, plot),
     gridId: componentId('grid', cell, plot),
@@ -188,7 +196,8 @@ function pushAxes(
     min: xRange[0],
     max: xRange[1],
     axisLabel: { fontSize: 9 },
-    splitLine: { show: spatial }
+    axisTick: { show: true, length: 4 },
+    splitLine: { show: true, lineStyle: { color: '#e2e8f0', width: 1, type: 'dashed' } }
   });
   parts.yAxis.push({
     id: componentId('yAxis', cell, plot),
@@ -197,20 +206,9 @@ function pushAxes(
     min: yRange[0],
     max: yRange[1],
     axisLabel: { fontSize: 9 },
-    splitLine: { show: spatial }
+    axisTick: { show: true, length: 4 },
+    splitLine: { show: true, lineStyle: { color: '#e2e8f0', width: 1, type: 'dashed' } }
   });
-  if (context.example.id === 'C05') {
-    const xAxis = parts.xAxis[parts.xAxis.length - 1];
-    const yAxis = parts.yAxis[parts.yAxis.length - 1];
-    const showX = cell.row === context.snapshot.rows - 1;
-    const showY = cell.column === 0;
-    xAxis.axisLabel = { fontSize: 9, show: showX };
-    xAxis.axisLine = { show: showX };
-    xAxis.name = showX ? 'Synchronized X' : '';
-    yAxis.axisLabel = { fontSize: 9, show: showY };
-    yAxis.axisLine = { show: showY };
-    yAxis.name = showY ? 'Synchronized Y' : '';
-  }
 }
 
 function pushMainCartesian(
@@ -553,6 +551,202 @@ function makeDirectMatrixSeries(cells: readonly CellDefinition[], seed: number):
   }));
 }
 
+export function usesSharedAxes({ example, snapshot }: Pick<TwoDimensionalBuildContext, 'example' | 'snapshot'>): boolean {
+  return (['x', 'y'] as const).every((dimension) => sharedAxisScope(snapshot, example, dimension) !== 'individual');
+}
+
+function cellBox(context: TwoDimensionalBuildContext, cell: CellDefinition): Component {
+  if (context.snapshot.interactive.enlargedCellId) return {};
+  return {
+    coordinateSystem: 'matrix', matrixId: 'matrix/main',
+    coord: context.example.id === 'P06'
+      ? [[cell.column * 2, cell.column * 2 + 1], [cell.row * 2, cell.row * 2 + 1]]
+      : [cell.column, cell.row]
+  };
+}
+
+function layoutCharts(parts: OptionParts, context: TwoDimensionalBuildContext, cells: readonly CellDefinition[], compact: boolean): void {
+  const { snapshot } = context;
+  const positions = snapshot.sharedAxisPositions ?? { x: 'bottom', y: 'left' };
+  const localMap = context.example.sharing.some((capability) => capability.element === 'visualMap') && snapshot.sharing.visualMap === 'individual';
+  for (const cell of cells) {
+    const grids = parts.grid.filter((grid) => String(grid.id).includes(`/${cell.id}/`));
+    const xAxes = parts.xAxis.filter((axis) => String(axis.id).includes(`/${cell.id}/`));
+    const yAxes = parts.yAxis.filter((axis) => String(axis.id).includes(`/${cell.id}/`));
+    if (!parts.title.some((entry) => entry.id === componentId('title', cell))) {
+      parts.title.push({ id: componentId('title', cell), ...cellBox(context, cell), text: cell.title, left: 'center', top: 5, textStyle: { fontSize: 11 } });
+    }
+    if (compact) {
+      const hasTop = grids.some((grid) => String(grid.id).endsWith('/top'));
+      const hasRight = grids.some((grid) => String(grid.id).endsWith('/right'));
+      for (const grid of grids) {
+        const plot = String(grid.id).split('/').pop();
+        Object.assign(grid, { left: 0, right: 0, top: 0, bottom: 0, outerBoundsMode: 'none' });
+        delete grid.width;
+        delete grid.height;
+        // Marginal plots retain their own regions, without padding between regions.
+        if (plot === 'main') { grid.top = hasTop ? '20%' : 0; grid.right = hasRight ? '20%' : 0; }
+        if (plot === 'top') { grid.bottom = '80%'; grid.right = hasRight ? '20%' : 0; }
+        if (plot === 'right') { grid.left = '80%'; grid.top = hasTop ? '20%' : 0; }
+        // Independent row/column groups need room only at their group's boundary.
+        if (sharedAxisScope(snapshot, context.example, 'x') === 'row' && grid[positions.x] === 0) grid[positions.x] = context.example.id === 'C17' ? 60 : 44;
+        if (sharedAxisScope(snapshot, context.example, 'y') === 'column' && grid[positions.y] === 0) grid[positions.y] = context.example.id === 'C17' ? 68 : 52;
+        // Two pixels on each cell edge leave a four-pixel comparison gap.
+        for (const side of ['left', 'right', 'top', 'bottom']) {
+          if (grid[side] === 0) grid[side] = 2;
+        }
+      }
+      for (const dimension of ['x', 'y'] as const) {
+        const scope = sharedAxisScope(snapshot, context.example, dimension);
+        const peers = cells.filter((peer) => scopeKey(peer, scope) === scopeKey(cell, scope) &&
+          (dimension === 'x' ? peer.column === cell.column : peer.row === cell.row));
+        const coordinates = peers.map((peer) => dimension === 'x' ? peer.row : peer.column);
+        const near = positions[dimension] === 'top' || positions[dimension] === 'left';
+        const edge = near ? Math.min(...coordinates) : Math.max(...coordinates);
+        const onEdge = (dimension === 'x' ? cell.row : cell.column) === edge;
+        const outerPlot = dimension === 'x' && positions.x === 'top' && hasTop ? 'top'
+          : dimension === 'y' && positions.y === 'right' && hasRight ? 'right' : 'main';
+        for (const axis of dimension === 'x' ? xAxes : yAxes) {
+          const show = onEdge && String(axis.id).endsWith(`/${outerPlot}`);
+          Object.assign(axis, {
+            position: positions[dimension], offset: context.example.id === 'C17' ? 16 : 0,
+            axisLabel: { fontSize: 9, show, showMinLabel: true, showMaxLabel: false },
+            axisLine: { show, onZero: false }, axisTick: { show, length: 4 }, name: ''
+          });
+        }
+      }
+      const title = parts.title.find((entry) => entry.id === componentId('title', cell));
+      if (title) Object.assign(title, { left: 8, top: 5, textStyle: { fontSize: 10, color: '#64748b' } });
+      continue;
+    }
+
+    if (grids.length === 1 && context.example.id !== 'S09') {
+      Object.assign(grids[0], { left: 38, right: localMap ? 70 : 24, top: 62, bottom: 42 });
+    }
+    else if (grids.length > 1) {
+      for (const grid of grids) {
+        const plot = String(grid.id).split('/').pop();
+        delete grid.width;
+        delete grid.height;
+        if (context.example.id === 'P06' && !snapshot.interactive.enlargedCellId) {
+          Object.assign(grid, { left: plot === 'right' ? 24 : 38, right: 12, top: plot === 'top' ? 62 : 24, bottom: plot === 'top' ? 24 : 42 });
+        }
+        else {
+          Object.assign(grid, {
+            left: plot === 'right' ? (localMap ? '64%' : '78%') : '12%',
+            right: plot === 'right' ? (localMap ? '20%' : '4%') : (localMap ? '40%' : '24%'),
+            top: plot === 'top' ? '28%' : '52%',
+            bottom: plot === 'top' ? '58%' : '18%'
+          });
+        }
+      }
+    }
+    if (!grids.length) continue;
+    const xAxisIds = xAxes.filter((axis) => !String(axis.id).endsWith('/right')).map((axis) => String(axis.id));
+    const yAxisIds = yAxes.filter((axis) => !String(axis.id).endsWith('/top')).map((axis) => String(axis.id));
+    const zoomIds: string[] = [];
+    // ECharts automatically creates select zooms only for the first toolbox.
+    // Explicit components make every cell's toolbox usable and stateful.
+    for (const dimension of ['x', 'y'] as const) {
+      const axes = dimension === 'x' ? xAxisIds : yAxisIds;
+      const id = componentId('dataZoom', cell, `toolbox-${dimension}`);
+      zoomIds.push(id);
+      parts.dataZoom.push({ id, type: 'select', [`${dimension}AxisId`]: axes,
+        start: snapshot.interactive.dataZoom[`${cell.id}/${dimension}`]?.start ?? 0,
+        end: snapshot.interactive.dataZoom[`${cell.id}/${dimension}`]?.end ?? 100 });
+    }
+    parts.toolbox.push({
+      id: componentId('toolbox', cell), ...cellBox(context, cell), right: 8, top: 25, itemSize: 12,
+      feature: {
+        dataZoom: { xAxisId: xAxisIds, yAxisId: yAxisIds, title: { zoom: 'Zoom chart', back: 'Undo last zoom' } },
+        myResetZoom: {
+          show: true, title: 'Reset chart zoom',
+          icon: 'path://M2,10a8,8 0 1,0 3,-6M2,2v8h8',
+          onclick: (_model: unknown, api: { dispatchAction(action: unknown): void }) => {
+            api.dispatchAction({ type: 'dataZoom', batch: zoomIds.map((id) => ({ dataZoomId: id, start: 0, end: 100 })) });
+          }
+        }
+      }
+    });
+  }
+}
+
+function configureSharedAxes(parts: OptionParts, context: TwoDimensionalBuildContext, cells: readonly CellDefinition[], compact: boolean): void {
+  const { snapshot, example } = context;
+  const positions = snapshot.sharedAxisPositions ?? { x: 'bottom', y: 'left' };
+  const axisClearance = example.id === 'C17' ? 16 : 0;
+  for (const dimension of ['x', 'y'] as const) {
+    const scope = sharedAxisScope(snapshot, example, dimension);
+    if (scope === 'individual' || !supportsSharedAxis(example, dimension)) continue;
+    const axisIdProperty = `${dimension}AxisId`;
+    const axes = dimension === 'x' ? parts.xAxis : parts.yAxis;
+    const coupledPlot = dimension === 'x' ? 'top' : 'right';
+    const sharedIds = new Set(axes.filter((axis) => /\/main$/.test(String(axis.id)) || String(axis.id).endsWith(`/${coupledPlot}`)).map((axis) => String(axis.id)));
+    parts.dataZoom = parts.dataZoom.filter((zoom) => !(zoom[axisIdProperty] as string[] | undefined)?.some((id) => sharedIds.has(id)));
+    groupCells(cells, scope).forEach((group, index) => {
+      const targets = axes.filter((axis) => sharedIds.has(String(axis.id)) && group.some((cell) => String(axis.id).includes(`/${cell.id}/`))).map((axis) => String(axis.id));
+      const state = readAxisState(snapshot, example, group[0], dimension);
+      const common = { [axisIdProperty]: targets, start: state.zoom?.start ?? 0, end: state.zoom?.end ?? 100, filterMode: 'none' };
+      const key = scopeKey(group[0], scope);
+      parts.dataZoom.push({ ...common, id: `dataZoom/group-${index}/${dimension}/native`, type: 'inside' });
+      parts.dataZoom.push({ ...common, id: `dataZoom/shared-${dimension}/${key}/select`, type: 'select' });
+      let position: Component = dimension === 'x'
+        ? { left: 72 + axisClearance, right: 52 + axisClearance, [positions.x]: 8, height: 16 }
+        : { top: (compact ? 84 : 62) + axisClearance, bottom: 58 + axisClearance, [positions.y]: 8, width: 14 };
+      if (compact && scope !== 'all' && !snapshot.interactive.enlargedCellId) {
+        const minRow = Math.min(...group.map((cell) => cell.row));
+        const maxRow = Math.max(...group.map((cell) => cell.row));
+        const minColumn = Math.min(...group.map((cell) => cell.column));
+        const maxColumn = Math.max(...group.map((cell) => cell.column));
+        position = {
+          coordinateSystem: 'matrix', matrixId: 'matrix/main', coord: [[minColumn, maxColumn], [minRow, maxRow]],
+          ...(dimension === 'x' ? { left: 0, right: 0, [positions.x]: scope === 'row' ? 0 : -48, height: 14 }
+            : { top: 0, bottom: 0, [positions.y]: scope === 'column' ? 0 : -44, width: 12 })
+        };
+      }
+      // A single-axis comparison still gets one controller per group outside the plots.
+      else if (!compact && scope !== 'all') {
+        position = dimension === 'x'
+          ? { left: `${10 + index * 80 / Math.max(1, groupCells(cells, scope).length)}%`, width: `${70 / Math.max(1, groupCells(cells, scope).length)}%`, bottom: 8, height: 16 }
+          : { top: `${12 + index * 75 / Math.max(1, groupCells(cells, scope).length)}%`, height: `${65 / Math.max(1, groupCells(cells, scope).length)}%`, right: 8, width: 14 };
+      }
+      parts.dataZoom.push({ ...common, id: `dataZoom/shared-${dimension}/${key}/slider`, type: 'slider', ...position, showDataShadow: false, brushSelect: false, textStyle: { fontSize: 9 } });
+
+      if (!compact) {
+        for (const cell of group) {
+          const peers = group.filter((peer) => dimension === 'x' ? peer.column === cell.column : peer.row === cell.row);
+          const indices = peers.map((peer) => dimension === 'x' ? peer.row : peer.column);
+          const near = positions[dimension] === 'top' || positions[dimension] === 'left';
+          const edge = near ? Math.min(...indices) : Math.max(...indices);
+          const onEdge = (dimension === 'x' ? cell.row : cell.column) === edge;
+          for (const axis of axes.filter((entry) => String(entry.id).includes(`/${cell.id}/`) && sharedIds.has(String(entry.id)))) {
+            const show = onEdge && String(axis.id).endsWith('/main');
+            Object.assign(axis, { position: positions[dimension], offset: axisClearance, axisLabel: { fontSize: 9, show }, axisLine: { show, onZero: false }, axisTick: { show, length: 4 } });
+          }
+        }
+      }
+    });
+  }
+  if (compact) {
+    parts.toolbox.push({ id: 'toolbox/shared-axes', right: 18, top: 28, itemSize: 13,
+      feature: { dataZoom: { xAxisId: parts.xAxis.filter((axis) => !String(axis.id).endsWith('/right')).map((axis) => axis.id), yAxisId: parts.yAxis.filter((axis) => !String(axis.id).endsWith('/top')).map((axis) => axis.id) } } });
+  }
+  // Reset actions address the same group controllers as wheel, pan, slider and box zoom.
+  for (const toolbox of parts.toolbox) {
+    const feature = toolbox.feature as Component;
+    const target = feature.dataZoom as Component | undefined;
+    if (!target) continue;
+    const zooms = parts.dataZoom.filter((zoom) => zoom.type === 'select' && ['x', 'y'].some((dimension) => {
+      const ids = target[`${dimension}AxisId`] as string[] | undefined;
+      return (zoom[`${dimension}AxisId`] as string[] | undefined)?.some((id) => ids?.includes(id));
+    }));
+    feature.myResetZoom = {
+      show: true, title: compact ? 'Reset shared axes zoom' : 'Reset chart zoom', icon: 'path://M2,10a8,8 0 1,0 3,-6M2,2v8h8',
+      onclick: (_model: unknown, api: { dispatchAction(action: unknown): void }) => api.dispatchAction({ type: 'dataZoom', batch: zooms.map((zoom) => ({ dataZoomId: zoom.id, start: 0, end: 100 })) })
+    };
+  }
+}
+
 export function buildTwoDimensionalOption(context: TwoDimensionalBuildContext): EChartsOption {
   const parts: OptionParts = {
     grid: [],
@@ -566,16 +760,17 @@ export function buildTwoDimensionalOption(context: TwoDimensionalBuildContext): 
     toolbox: []
   };
   const enlargedCellId = context.snapshot.interactive.enlargedCellId;
+  const populatedCells = context.cells.filter((_cell, index, all) => !(context.example.id === 'M05' && index === all.length - 1));
   const renderCells = enlargedCellId
-    ? context.cells.filter((cell) => cell.id === enlargedCellId)
-    : context.cells;
+    ? populatedCells.filter((cell) => cell.id === enlargedCellId)
+    : populatedCells;
+  const compact = usesSharedAxes(context) && !enlargedCellId;
 
   if (context.example.id === 'M01') {
     parts.series.push(...makeDirectMatrixSeries(renderCells, context.snapshot.seed));
   }
   else {
     for (const cell of renderCells) {
-      if (context.example.id === 'M05' && cell === renderCells[renderCells.length - 1]) continue;
       if (context.example.profile === 'bounded') {
         pushBoundedSpatial(parts, context, cell);
       }
@@ -589,10 +784,10 @@ export function buildTwoDimensionalOption(context: TwoDimensionalBuildContext): 
   }
 
   const sharingElements = new Set(context.example.sharing.map((capability) => capability.element));
-  if (sharingElements.has('legendSelection') || sharingElements.has('seriesVisibility')) {
+  if (!compact || sharingElements.has('legendSelection') || sharingElements.has('seriesVisibility')) {
     const scope = sharingElements.has('legendSelection')
       ? context.snapshot.sharing.legendSelection
-      : context.snapshot.sharing.seriesVisibility;
+      : sharingElements.has('seriesVisibility') ? context.snapshot.sharing.seriesVisibility : 'individual';
     groupCells(renderCells, scope).forEach((group, index) => {
       const key = scopeKey(group[0], scope);
       const selected = context.snapshot.interactive.legendSelections[group[0].id] ?? {};
@@ -615,8 +810,11 @@ export function buildTwoDimensionalOption(context: TwoDimensionalBuildContext): 
         id: `legend/group-${index}/${key}`,
         data: names,
         selected: selectedByName,
-        top: 8 + index * 22,
-        right: 10,
+        type: 'scroll',
+        formatter: (name: string) => name.split('/')[0],
+        ...(scope === 'individual' && !compact
+          ? { ...cellBox(context, group[0]), left: 6, right: 6, bottom: 4 }
+          : { top: 8 + index * 22, right: 10 }),
         textStyle: { fontSize: 9 }
       });
     });
@@ -643,6 +841,11 @@ export function buildTwoDimensionalOption(context: TwoDimensionalBuildContext): 
             pieces: [{ max: 33, label: 'Low' }, { min: 34, max: 66, label: 'Medium' }, { min: 67, label: 'High' }]
           }
         : { ...common, type: 'continuous', calculable: true, right: 5 + index * 18, top: 36 });
+      if (scope === 'individual' && !compact) {
+        Object.assign(parts.visualMap[parts.visualMap.length - 1], cellBox(context, group[0]), {
+          right: 4, top: 58, itemWidth: 10, itemHeight: context.example.id === 'S05' ? 10 : 65, textStyle: { fontSize: 9 }, padding: 2
+        });
+      }
     });
   }
   if (sharingElements.has('dataZoomX') && context.example.profile !== 'compound') {
@@ -652,13 +855,23 @@ export function buildTwoDimensionalOption(context: TwoDimensionalBuildContext): 
     pushScopedZoom(parts, context, renderCells, 'y', context.snapshot.sharing.dataZoomY);
   }
 
+  layoutCharts(parts, context, renderCells, compact);
+  configureSharedAxes(parts, context, renderCells, compact);
+
   if (enlargedCellId) {
+    for (const title of parts.title) {
+      delete title.coordinateSystem;
+      delete title.matrixId;
+      delete title.coord;
+    }
     parts.grid = parts.grid.map((grid) => {
       const expanded = { ...grid };
       delete expanded.coordinateSystem;
       delete expanded.matrixId;
       delete expanded.coord;
-      return { ...expanded, left: 70, right: 35, top: 55, bottom: 50 };
+      return parts.grid.length === 1
+        ? { ...expanded, left: 70, right: parts.visualMap.length ? 90 : 35, top: 70, bottom: 50 }
+        : expanded;
     });
   }
 
@@ -678,9 +891,9 @@ export function buildTwoDimensionalOption(context: TwoDimensionalBuildContext): 
       const cellLeft = 4 + column * cellWidth;
       const cellTop = 6 + row * cellHeight;
       const boxes: Record<string, { left: number; top: number; width: number; height: number }> = {
-        main: { left: cellLeft + cellWidth * 0.08, top: cellTop + cellHeight * 0.28, width: cellWidth * 0.66, height: cellHeight * 0.64 },
-        top: { left: cellLeft + cellWidth * 0.08, top: cellTop + cellHeight * 0.04, width: cellWidth * 0.66, height: cellHeight * 0.18 },
-        right: { left: cellLeft + cellWidth * 0.78, top: cellTop + cellHeight * 0.28, width: cellWidth * 0.18, height: cellHeight * 0.64 }
+        main: { left: cellLeft + cellWidth * 0.12, top: cellTop + cellHeight * 0.52, width: cellWidth * 0.64, height: cellHeight * 0.30 },
+        top: { left: cellLeft + cellWidth * 0.12, top: cellTop + cellHeight * 0.28, width: cellWidth * 0.64, height: cellHeight * 0.14 },
+        right: { left: cellLeft + cellWidth * 0.78, top: cellTop + cellHeight * 0.52, width: cellWidth * 0.18, height: cellHeight * 0.30 }
       };
       const box = boxes[plot];
       const absolute = { ...grid };
@@ -694,19 +907,6 @@ export function buildTwoDimensionalOption(context: TwoDimensionalBuildContext): 
         width: `${box.width.toFixed(2)}%`,
         height: `${box.height.toFixed(2)}%`
       };
-    });
-  }
-
-  if (context.example.id === 'C08') {
-    parts.toolbox.push({ id: 'toolbox/selected-area-zoom', feature: { dataZoom: {}, restore: {} }, right: 18, top: 12 });
-  }
-  if (context.example.id === 'M06') {
-    parts.toolbox.push({
-      id: 'toolbox/row-0:column-0/main',
-      coordinateSystem: 'matrix',
-      matrixId: 'matrix/main',
-      coord: [0, 0],
-      feature: { dataZoom: {}, restore: {}, saveAsImage: {} }
     });
   }
 

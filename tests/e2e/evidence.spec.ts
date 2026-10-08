@@ -11,7 +11,7 @@ test('captures representative layout and mode evidence', async ({ page }) => {
   await page.screenshot({ path: 'evidence/screenshots/M09-constrained.png', fullPage: true });
 
   await page.goto('/?example=C06');
-  await page.getByLabel('X dataZoom scope').selectOption('row');
+  await page.getByLabel('X axis sharing').selectOption('row');
   await page.screenshot({ path: 'evidence/screenshots/C06-row-sharing.png', fullPage: true });
 
   await page.goto('/?example=C14');
@@ -47,7 +47,7 @@ test('survives repeated lifecycle, rapid scopes, resize, and empty-grid transiti
   await expect(page.locator('#experiment-chart canvas')).toHaveCount(1);
 
   await page.goto('/?example=R06');
-  const xScope = page.getByLabel('X range scope');
+  const xScope = page.getByLabel('X axis sharing');
   for (const value of ['all', 'row', 'column', 'individual', 'all', 'individual']) {
     await xScope.selectOption(value);
   }
@@ -71,7 +71,7 @@ test('writes durable option and measurement evidence for representative families
   await mkdir('evidence/options', { recursive: true });
   await mkdir('evidence/measurements', { recursive: true });
 
-  for (const id of ['M02', 'C06', 'S07', 'P08', 'G02', 'G06', 'G10', 'R04']) {
+  for (const id of ['M02', 'C06', 'S04', 'P08', 'G02', 'G06', 'G10', 'R04']) {
     await page.goto(`/?example=${id}`);
     await expect(page.locator('#chart-status')).toContainText(`${id} running`);
     const option = await page.evaluate(() => (

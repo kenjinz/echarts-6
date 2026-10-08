@@ -89,20 +89,16 @@ const cartesianExamples = defineGroup('cartesian', 'Multi-panel Cartesian', 'car
   { id: 'C13', title: 'Tooltip and pointer-event routing' },
   { id: 'C14', title: 'Cell enlargement with state preservation' },
   { id: 'C15', title: 'Dynamic cells with unaffected state preservation' },
-  { id: 'C16', title: 'Long labels, sparse cells, and narrow viewports' }
+  { id: 'C16', title: 'Long labels, sparse cells, and narrow viewports' },
+  { id: 'C17', title: 'Detached shared axes with comparison grid', sharing: share('xRange', 'yRange') }
 ]);
 
-const boundedExamples = defineGroup('bounded-spatial', 'Bounded Spatial Overlay', 'bounded', [
-  { id: 'S01', title: 'Circular boundary and clipped rectangular data items' },
+const boundedExamples = defineGroup('bounded-spatial', 'Geometry and Color Controls', 'bounded', [
   { id: 'S02', title: 'Pixel symbols versus domain-sized shapes' },
   { id: 'S03', title: 'Vector scale and reference-vector sharing', sharing: share('vectorScale', 'referenceVectorValue') },
   { id: 'S04', title: 'Continuous visualMap sharing scopes', sharing: share('visualMap') },
   { id: 'S05', title: 'Piecewise visualMap sharing scopes', sharing: share('visualMap') },
-  { id: 'S06', title: 'Spatial range and dataZoom sharing', sharing: share('xRange', 'yRange', 'dataZoomX', 'dataZoomY') },
-  { id: 'S07', title: 'Legend, series, and symbol visibility', sharing: share('legendSelection', 'seriesVisibility', 'symbolVisibility') },
-  { id: 'S08', title: 'Data-item interaction and identity' },
-  { id: 'S09', title: 'Aspect ratio, clipping, resize, and enlargement' },
-  { id: 'S10', title: 'Spatial state persistence after updates' }
+  { id: 'S09', title: 'Equal-scale geometry during resize and enlargement' },
 ]);
 
 const compoundFixed = fixed('xRange', 'yRange', 'dataZoomX', 'dataZoomY');
@@ -126,7 +122,7 @@ const compoundExamples = defineGroup('compound-spatial', 'Compound Spatial with 
 ]);
 
 const threeDimensionalExamples = defineGroup('three-dimensional', 'ECharts-GL 3D', 'three-dimensional', [
-  { id: 'G01', title: 'Native matrix placement of grid3D' },
+  { id: 'G01', title: 'Unsupported native matrix placement (diagnostic)' },
   { id: 'G02', title: 'Absolute multi-grid3D one-instance layout' },
   { id: 'G03', title: 'Independent 3D camera interaction and targeting' },
   { id: 'G04', title: 'Camera sharing scopes', sharing: share('camera') },

@@ -1,4 +1,6 @@
 import type { AppStateSnapshot, CellId } from '../core/types';
+import { axisGroupKey } from './sharedAxes';
+import { createCells } from '../data/cells';
 
 type Component = Record<string, unknown>;
 
@@ -45,7 +47,15 @@ export function captureOptionState(snapshot: AppStateSnapshot, option: unknown):
     for (const dimension of ['x', 'y'] as const) {
       for (const axisId of axisIds(zoom, dimension)) {
         const id = cellId(axisId);
-        if (id) snapshot.interactive.dataZoom[`${id}/${dimension}`] = { start, end };
+        if (id) {
+          snapshot.interactive.dataZoom[`${id}/${dimension}`] = { start, end };
+          const axis = snapshot.sharedAxes?.[dimension];
+          const cell = createCells(snapshot.rows, snapshot.columns).find((entry) => entry.id === id);
+          if (axis && axis.scope !== 'individual' && cell && !String(axisId).endsWith(dimension === 'x' ? '/right' : '/top')) {
+            const group = axis.groups[axisGroupKey(cell, axis.scope)];
+            if (group) group.zoom = { start, end };
+          }
+        }
       }
     }
   }

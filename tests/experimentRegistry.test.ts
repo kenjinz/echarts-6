@@ -6,12 +6,12 @@ describe('experiment registry', () => {
   it('registers every required example ID exactly once', () => {
     const ids = EXAMPLES.map((example) => example.id);
 
-    expect(ids).toHaveLength(66);
-    expect(new Set(ids).size).toBe(66);
+    expect(ids).toHaveLength(62);
+    expect(new Set(ids).size).toBe(62);
     expect(ids).toEqual([
       ...Array.from({ length: 10 }, (_, index) => `M${String(index + 1).padStart(2, '0')}`),
-      ...Array.from({ length: 16 }, (_, index) => `C${String(index + 1).padStart(2, '0')}`),
-      ...Array.from({ length: 10 }, (_, index) => `S${String(index + 1).padStart(2, '0')}`),
+      ...Array.from({ length: 17 }, (_, index) => `C${String(index + 1).padStart(2, '0')}`),
+      'S02', 'S03', 'S04', 'S05', 'S09',
       ...Array.from({ length: 12 }, (_, index) => `P${String(index + 1).padStart(2, '0')}`),
       ...Array.from({ length: 10 }, (_, index) => `G${String(index + 1).padStart(2, '0')}`),
       ...Array.from({ length: 8 }, (_, index) => `R${String(index + 1).padStart(2, '0')}`)
@@ -44,7 +44,7 @@ describe('experiment registry', () => {
   });
 
   it('resolves examples by stable ID', () => {
-    expect(getExample('S08').title).toMatch(/interaction/i);
+    expect(getExample('S02').title).toMatch(/shapes/i);
     expect(() => getExample('missing')).toThrow('Unknown example: missing');
   });
 });

@@ -38,7 +38,7 @@ export type ExampleFamily =
 export type ExampleGroup =
   | 'Matrix Foundation'
   | 'Multi-panel Cartesian'
-  | 'Bounded Spatial Overlay'
+  | 'Geometry and Color Controls'
   | 'Compound Spatial with Marginal Plots'
   | 'ECharts-GL 3D'
   | 'Export and State'
@@ -108,6 +108,13 @@ export interface AppStateSnapshot {
   renderer: 'canvas' | 'svg';
   rows: number;
   columns: number;
+  sharedAxisPositions?: { x: 'top' | 'bottom'; y: 'left' | 'right' };
+  sharedAxes?: Partial<Record<'x' | 'y', { scope: SharingScope; groups: Record<string, SharedAxisState> }>>;
   sharing: SharingState;
   interactive: InteractiveState;
+}
+
+export interface SharedAxisState {
+  range?: [number, number];
+  zoom?: { start: number; end: number };
 }

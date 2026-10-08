@@ -1,26 +1,26 @@
 import { expect, test } from '@playwright/test';
 import { LESSONS } from '../../src/presentation/catalog';
 
-test('starts with twenty guided lessons and opens source-specific variants', async ({ page }) => {
+test('starts with nineteen guided lessons and opens source-specific variants', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByTestId('lesson-button')).toHaveCount(20);
+  await expect(page.getByTestId('lesson-button')).toHaveCount(19);
   await expect(page.getByTestId('lesson-id')).toHaveText('D01');
   await expect(page.getByTestId('example-id')).toHaveText('M02');
   await page.getByTestId('lesson-button').filter({ hasText: 'D04' }).click();
   await page.getByLabel('Lesson variant').selectOption('C07');
   await expect(page).toHaveURL(/lesson=D04&example=C07/);
   await expect(page.locator('#guide-steps li')).toHaveCount(3);
-  await expect(page.getByLabel('Y linked zoom scope')).toBeVisible();
-  await expect(page.getByLabel('X linked zoom scope')).toHaveCount(0);
+  await expect(page.getByLabel('Y axis sharing')).toBeVisible();
+  await expect(page.getByLabel('X axis sharing')).toHaveCount(0);
   await expect(page.locator('#guide-limitation')).not.toBeEmpty();
   await expect(page.getByTestId('live-instances')).toHaveText('1');
 });
 
 test('retains the existing engineering entry point and labels', async ({ page }) => {
   await page.goto('/?example=C06');
-  await expect(page.getByTestId('example-button')).toHaveCount(66);
+  await expect(page.getByTestId('example-button')).toHaveCount(62);
   await expect(page.getByTestId('lesson-button')).toHaveCount(0);
-  await expect(page.getByLabel('X dataZoom scope')).toBeVisible();
+  await expect(page.getByLabel('X axis sharing')).toBeVisible();
   await expect(page.locator('#lesson-guide')).toBeHidden();
 });
 
@@ -41,7 +41,7 @@ test('opens every guided lesson with the correct default source', async ({ page 
 
 test('search preserves chart state and history changes reset source state', async ({ page }) => {
   await page.goto('/?lesson=D04&example=C06');
-  await page.getByLabel('X linked zoom scope').selectOption('row');
+  await page.getByLabel('X axis sharing').selectOption('row');
   await page.getByRole('button', { name: 'Change X linked zoom', exact: true }).click();
   const before = await page.evaluate(() => (window as any).__matrixPoc.getSnapshot());
   await page.locator('#example-search').fill('no-such-lesson');
@@ -51,7 +51,7 @@ test('search preserves chart state and history changes reset source state', asyn
   await expect(page).toHaveURL(/lesson=D05&example=C09/);
   await page.goBack();
   await expect(page).toHaveURL(/lesson=D04&example=C06/);
-  await expect(page.getByLabel('X linked zoom scope')).toHaveValue('individual');
+  await expect(page.getByLabel('X axis sharing')).toHaveValue('individual');
   await page.goForward();
   await expect(page.getByTestId('lesson-id')).toHaveText('D05');
   await page.getByRole('button', { name: 'Reset example', exact: true }).click();
@@ -60,14 +60,14 @@ test('search preserves chart state and history changes reset source state', asyn
 
 test('mode-only switches preserve interaction state and independent search text', async ({ page }) => {
   await page.goto('/?lesson=D04&example=C06');
-  await page.getByLabel('X linked zoom scope').selectOption('column');
+  await page.getByLabel('X axis sharing').selectOption('column');
   await page.getByRole('button', { name: 'Change X linked zoom', exact: true }).click();
   await page.locator('#example-search').fill('zoom');
   const before = await page.evaluate(() => (window as any).__matrixPoc.getSnapshot());
   const initCount = await page.getByTestId('init-count').textContent();
   await page.getByLabel('Catalog view').selectOption('engineering');
   await expect(page.locator('#example-search')).toHaveValue('');
-  await expect(page.getByLabel('X dataZoom scope')).toHaveValue('column');
+  await expect(page.getByLabel('X axis sharing')).toHaveValue('column');
   await page.locator('#example-search').fill('C06');
   await page.getByLabel('Catalog view').selectOption('guided');
   await expect(page.locator('#example-search')).toHaveValue('zoom');
@@ -131,7 +131,7 @@ test('snapshot imports retain a matching lesson and expose unrelated sources in 
   await page.getByLabel('State snapshot JSON').fill(JSON.stringify(initial));
   await page.getByRole('button', { name: 'Import state', exact: true }).click();
   await expect(page).toHaveURL(/\?example=R01$/);
-  await expect(page.getByTestId('example-button')).toHaveCount(66);
+  await expect(page.getByTestId('example-button')).toHaveCount(62);
 });
 
 test('imported mixed dimensional modes survive guided initialization', async ({ page }) => {
@@ -159,7 +159,8 @@ test('failed GL loading reports an error and allows another lesson', async ({ pa
 });
 
 test('regenerating data keeps secondary controls in the advanced disclosure', async ({ page }) => {
-  await page.goto('/?lesson=D10&example=S10');
+  await page.goto('/?lesson=D02&example=M08');
+  await page.getByText('Advanced actions', { exact: true }).click();
   await page.getByRole('button', { name: 'Regenerate data', exact: true }).click();
   await expect(page.getByText('Advanced chart settings', { exact: true })).toBeVisible();
   await expect(page.getByLabel('Deterministic seed')).toBeHidden();
@@ -167,7 +168,7 @@ test('regenerating data keeps secondary controls in the advanced disclosure', as
 
 test('guided row zoom changes only the selected row', async ({ page }) => {
   await page.goto('/?lesson=D04&example=C06');
-  await page.getByLabel('X linked zoom scope').selectOption('row');
+  await page.getByLabel('X axis sharing').selectOption('row');
   await page.getByRole('button', { name: 'Change X linked zoom', exact: true }).click();
   const snapshot = await page.evaluate(() => (window as any).__matrixPoc.getSnapshot());
   expect(snapshot.interactive.dataZoom['row-0:column-0/x']).toEqual({ start: 20, end: 80 });
@@ -302,7 +303,7 @@ test('a chart-build error during import restores the prior investigation', async
   await page.getByRole('button', { name: 'Change X linked zoom', exact: true }).click();
   const before = await page.evaluate(() => (window as any).__matrixPoc.getSnapshot());
   const imported = structuredClone(before);
-  imported.exampleId = 'S08';
+  imported.exampleId = 'S02';
   imported.interactive.selectedDataItems['row-0:column-0'] = 42;
   const activeUrl = page.url();
   await page.locator('#technical-details > summary').click();

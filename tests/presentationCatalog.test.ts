@@ -5,13 +5,13 @@ import { CHAPTERS, LESSONS, APPENDIX } from '../src/presentation/catalog';
 it('covers every engineering case exactly once across lessons and appendix', () => {
   expect(CHAPTERS).toHaveLength(6);
   expect(LESSONS.map(l => l.id)).toEqual(
-    Array.from({ length: 20 }, (_, i) => `D${String(i + 1).padStart(2, '0')}`)
+    Array.from({ length: 20 }, (_, i) => `D${String(i + 1).padStart(2, '0')}`).filter(id => id !== 'D10')
   );
   const guided = LESSONS.flatMap(l => l.variants.map(v => v.exampleId));
-  expect(guided).toHaveLength(58);
+  expect(guided).toHaveLength(54);
   expect(APPENDIX).toHaveLength(8);
   const all = [...guided, ...APPENDIX.map(a => a.exampleId)];
-  expect(new Set(all).size).toBe(66);
+  expect(new Set(all).size).toBe(62);
   expect([...all].sort()).toEqual(EXAMPLES.map(e => e.id).sort());
 });
 

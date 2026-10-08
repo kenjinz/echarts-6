@@ -24,7 +24,8 @@ import { createSeededRandom } from './data/random';
 import { buildDimensionalOption } from './experiments/buildDimensionalOption';
 import {
   buildPerCellCartesianOption,
-  buildTwoDimensionalOption
+  buildTwoDimensionalOption,
+  usesSharedAxes
 } from './experiments/buildTwoDimensionalOption';
 import { createInitialScorecard, ResultStore } from './results/resultStore';
 import {
@@ -35,6 +36,7 @@ import {
 } from './sharing/optionState';
 import { resolveTargetCellIds } from './sharing/targetResolver';
 import { captureOptionState } from './sharing/captureState';
+import { axisDimension, normalizeSharedAxes, sharedAxisScope, supportsSharedAxis, writeAxisState } from './sharing/sharedAxes';
 import './style.css';
 
 const webglInstrumentation = installWebGLInstrumentation(
@@ -245,6 +247,14 @@ function renderCommonControls(): void {
     createField('Conflict policy', conflictPolicySelect)
   );
 
+  if ((['x', 'y'] as const).some((dimension) => supportsSharedAxis(currentExample, dimension))) {
+    const xPosition = createSelect([{ value: 'bottom', label: 'Bottom' }, { value: 'top', label: 'Top' }], snapshot.sharedAxisPositions?.x ?? 'bottom');
+    const yPosition = createSelect([{ value: 'left', label: 'Left' }, { value: 'right', label: 'Right' }], snapshot.sharedAxisPositions?.y ?? 'left');
+    xPosition.dataset.common = 'sharedXPosition';
+    yPosition.dataset.common = 'sharedYPosition';
+    elements.commonControls.append(createField('Shared X axis position', xPosition), createField('Shared Y axis position', yPosition));
+  }
+
   if (currentExample.family === 'three-dimensional' || currentExample.id === 'R08') {
     const mode = snapshot.interactive.viewMode[selectedCellId] ?? '3d';
     const viewMode = createSelect([
@@ -266,10 +276,15 @@ function renderCommonControls(): void {
 
 function renderSharingControls(): void {
   elements.sharingControls.replaceChildren();
+  const axes = new Set<string>();
   currentExample.sharing.forEach((capability, index) => {
+    const dimension = axisDimension(capability.element);
+    const sharedAxis = dimension && supportsSharedAxis(currentExample, dimension) && !capability.fixed;
+    if (sharedAxis && axes.has(dimension)) return;
+    if (sharedAxis) axes.add(dimension);
     const select = createSelect(
       capability.supportedScopes.map((scope) => ({ value: scope, label: SCOPE_LABELS[scope] })),
-      snapshot.sharing[capability.element]
+      sharedAxis ? sharedAxisScope(snapshot, currentExample, dimension) : snapshot.sharing[capability.element]
     );
     select.dataset.sharingElement = capability.element;
     select.dataset.capabilityIndex = String(index);
@@ -279,9 +294,9 @@ function renderSharingControls(): void {
       if (selection.mode === 'guided') select.selectedOptions[0].textContent = 'Fixed within panel';
     }
     const field = createField(
-      `${elementLabels()[capability.element]} scope`,
+      sharedAxis ? `${dimension.toUpperCase()} axis sharing` : `${elementLabels()[capability.element]} scope`,
       select,
-      selection.mode === 'guided' && capability.fixed ? 'Fixed: the main plot and matching profile stay linked.' : capability.reason
+      sharedAxis ? 'Shares the axis range, zoom and settings together.' : selection.mode === 'guided' && capability.fixed ? 'Fixed: the main plot and matching profile stay linked.' : capability.reason
     );
     if (capability.fixed) field.classList.add('is-fixed');
     elements.sharingControls.append(field);
@@ -322,6 +337,15 @@ function renderActionControls(): void {
     button.dataset.mutateElement = capability.element;
     elements.actionControls.append(button);
   }
+  for (const dimension of ['x', 'y'] as const) {
+    if (!supportsSharedAxis(currentExample, dimension)) continue;
+    for (const element of (dimension === 'x' ? ['xRange', 'dataZoomX'] : ['yRange', 'dataZoomY']) as SharingElement[]) {
+      if (mutationElements.has(element)) continue;
+      const button = createButton(`Change ${elementLabels()[element]}`);
+      button.dataset.mutateElement = element;
+      elements.actionControls.append(button);
+    }
+  }
 }
 
 function updateSharingSummary(): void {
@@ -345,6 +369,8 @@ function disposeCharts(): void {
   elements.chartHost.replaceChildren();
   elements.chartHost.classList.remove('baseline-layout');
   elements.chartHost.style.removeProperty('--baseline-columns');
+  elements.chartHost.style.removeProperty('min-height');
+  elements.chartHost.style.removeProperty('min-width');
 }
 
 function captureChartState(chart: ECharts): void {
@@ -376,9 +402,22 @@ function buildOption(): EChartsOption {
 }
 
 function bindChartEvents(chart: ECharts): void {
+  let cameraGestureGridId: string | undefined;
+  const markCameraGesture = (event: { offsetX: number; offsetY: number }) => {
+    const grids = (chart.getOption() as { grid3D?: Record<string, unknown>[] }).grid3D ?? [];
+    const length = (value: unknown, total: number, fallback: number) => typeof value === 'number' ? value
+      : typeof value === 'string' && value.endsWith('%') ? parseFloat(value) * total / 100 : fallback;
+    cameraGestureGridId = grids.find(grid => {
+      const x = length(grid.left, chart.getWidth(), 0), y = length(grid.top, chart.getHeight(), 0);
+      const width = length(grid.width, chart.getWidth(), chart.getWidth()), height = length(grid.height, chart.getHeight(), chart.getHeight());
+      return event.offsetX >= x && event.offsetX <= x + width && event.offsetY >= y && event.offsetY <= y + height;
+    })?.id as string | undefined;
+  };
+  chart.getZr().on('mousedown', markCameraGesture);
+  chart.getZr().on('mousewheel', markCameraGesture);
   const handleEvent = (eventName: string, params: unknown): void => {
-    const detail = params as { seriesId?: string; componentId?: string; dataIndex?: number };
-    const identity = detail.seriesId ?? detail.componentId ?? 'chart';
+    const detail = params as { seriesId?: string; componentId?: string; grid3DId?: string; dataIndex?: number };
+    const identity = detail.seriesId ?? detail.componentId ?? detail.grid3DId ?? 'chart';
     const match = identity.match(/row-\d+:column-\d+/);
     if (match) selectedCellId = match[0];
     elements.selectedCell.textContent = selectedCellId;
@@ -408,9 +447,20 @@ function bindChartEvents(chart: ECharts): void {
     handleEvent('data selection', params);
   });
   (chart as unknown as { on(name: string, handler: (params: unknown) => void): void })
-    .on('globalcamerachanged', (params) => {
+    .on('grid3dcamerachanged', (params) => {
+      // GL also emits this event while initializing each viewport. Only user
+      // gestures should select a panel or drive its camera-sharing group.
+      if ((params as { grid3DId?: string }).grid3DId !== cameraGestureGridId) return;
       handleEvent('camera', params);
-      queueMicrotask(() => captureChartState(chart));
+      captureChartState(chart);
+      const sourceId = (params as { grid3DId?: string }).grid3DId?.match(/row-\d+:column-\d+/)?.[0];
+      const camera = sourceId && snapshot.interactive.camera[sourceId];
+      if (!sourceId || !camera || snapshot.sharing.camera === 'individual') return;
+      const targets = resolveTargetCellIds(cells, sourceId, snapshot.sharing.camera);
+      for (const id of targets) {
+        snapshot.interactive.camera[id] = structuredClone(camera);
+        if (id !== sourceId) chart.dispatchAction({ type: 'grid3DChangeCamera', grid3DId: `grid3D/${id}/main`, ...camera }, { silent: true });
+      }
     });
   chart.getZr().on('contextmenu', () => {
     elements.latestEvent.textContent = 'context-menu';
@@ -435,11 +485,15 @@ async function initializeCharts(): Promise<string | undefined> {
     if (usePerCell) {
       elements.chartHost.classList.add('baseline-layout');
       elements.chartHost.style.setProperty('--baseline-columns', String(snapshot.columns));
-      for (const cell of cells) {
+      const hosts = cells.map(cell => {
         const host = document.createElement('div');
         host.className = 'baseline-cell';
         host.dataset.cellId = cell.id;
         elements.chartHost.append(host);
+        return host;
+      });
+      for (const [index, cell] of cells.entries()) {
+        const host = hosts[index];
         const chart = echarts.init(host, undefined, { renderer: snapshot.renderer });
         initCalls += 1;
         charts.push(chart);
@@ -456,6 +510,7 @@ async function initializeCharts(): Promise<string | undefined> {
         }
         bindChartEvents(chart);
       }
+      charts.forEach(chart => chart.resize());
     }
     else {
       const chart = echarts.init(elements.chartHost, undefined, { renderer: snapshot.renderer });
@@ -483,6 +538,19 @@ async function initializeCharts(): Promise<string | undefined> {
 function applyOption(): void {
   if (charts.length !== 1 || currentExample.id === 'R04') return;
   const started = performance.now();
+  normalizeSharedAxes(snapshot, currentExample);
+  const twoDimensional = !wantsThreeDimensions();
+  const compact = usesSharedAxes({ example: currentExample, snapshot }) && !snapshot.interactive.enlargedCellId;
+  const rowCount = snapshot.interactive.enlargedCellId ? 1 : snapshot.rows;
+  const columnCount = snapshot.interactive.enlargedCellId ? 1 : snapshot.columns;
+  const compound = currentExample.profile === 'compound';
+  const topMarginalGutter = compact && compound && sharedAxisScope(snapshot, currentExample, 'x') === 'row' && snapshot.sharedAxisPositions?.x === 'top';
+  const rightMarginalGutter = compact && compound && sharedAxisScope(snapshot, currentExample, 'y') === 'column' && snapshot.sharedAxisPositions?.y === 'right';
+  const cellHeight = topMarginalGutter ? 400 : compact ? 180 : currentExample.id === 'P06' ? 360 : 280;
+  const cellWidth = rightMarginalGutter ? 440 : compact ? 180 : 300;
+  elements.chartHost.style.minHeight = twoDimensional ? `${Math.max(520, rowCount * cellHeight + 154)}px` : `${rowCount * (currentExample.id === 'G07' ? 450 : 290) + 80}px`;
+  elements.chartHost.style.minWidth = twoDimensional ? `${columnCount * cellWidth + 196}px` : `${columnCount * (currentExample.id === 'G07' ? 480 : 360) + 80}px`;
+  charts[0].resize();
   charts[0].setOption(buildOption(), { notMerge: true, lazyUpdate: false });
   lastSetOptionDuration = performance.now() - started;
   elements.latestAction.textContent = 'setOption (full replacement)';
@@ -490,8 +558,10 @@ function applyOption(): void {
 }
 
 function updateClassification(): void {
-  const classification = 'Inconclusive' as const;
-  const note = 'Implemented for evaluation; promote only after the example-specific acceptance checks and evidence review pass.';
+  const classification = currentExample.id === 'G01' ? 'Unsupported' as const : 'Inconclusive' as const;
+  const note = currentExample.id === 'G01'
+    ? 'Native matrix coordinates are ignored by this ECharts-GL version: all four viewports overlap. Use G02 for explicit panel placement.'
+    : 'Implemented for evaluation; promote only after the example-specific acceptance checks and evidence review pass.';
   resultStore.update(`${currentExample.id}-PRIMARY`, {
     classification,
     confidence: 'Low',
@@ -638,6 +708,17 @@ async function handleAction(action: string): Promise<void> {
 
 function mutateInteractiveState(element: SharingElement): void {
   if (cells.length === 0) return;
+  const dimension = axisDimension(element);
+  if (dimension && supportsSharedAxis(currentExample, dimension)) {
+    captureAllChartState();
+    const cell = cells.find((entry) => entry.id === selectedCellId) ?? cells[0];
+    writeAxisState(snapshot, currentExample, cell, dimension,
+      element === 'xRange' ? { range: [4, 20] } : element === 'yRange' ? { range: [-5, 35] }
+        : { zoom: dimension === 'x' ? { start: 20, end: 80 } : { start: 15, end: 75 } });
+    applyOption();
+    elements.latestAction.textContent = `${dimension.toUpperCase()} axis group updated`;
+    return;
+  }
   const scope = snapshot.sharing[element];
   const targets = resolveTargetCellIds(cells, selectedCellId, scope);
 
@@ -690,7 +771,7 @@ function mutateInteractiveState(element: SharingElement): void {
         break;
       }
       case 'visualMap':
-        snapshot.interactive.colorScaleRange[cellId] = [15, 85];
+        snapshot.interactive.colorScaleRange[cellId] = currentExample.family === 'three-dimensional' ? [-3, 5] : [15, 85];
         break;
       case 'symbolVisibility':
         snapshot.interactive.symbolVisibility[cellId] = snapshot.interactive.symbolVisibility[cellId] === false;
@@ -821,6 +902,13 @@ elements.commonControls.addEventListener('change', (event) => {
   else if (key === 'renderer') {
     snapshot.renderer = control.value as 'canvas' | 'svg';
     void initializeCharts();
+  }
+  else if (key === 'sharedXPosition' || key === 'sharedYPosition') {
+    captureAllChartState();
+    snapshot.sharedAxisPositions ??= { x: 'bottom', y: 'left' };
+    if (key === 'sharedXPosition') snapshot.sharedAxisPositions.x = control.value as 'top' | 'bottom';
+    else snapshot.sharedAxisPositions.y = control.value as 'left' | 'right';
+    applyOption();
   }
   else if (key === 'viewMode') {
     snapshot.interactive.viewMode[selectedCellId] = control.value as '2d' | '3d';

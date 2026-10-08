@@ -23,7 +23,7 @@ it('normalizes guided links and explains incompatible variants', () => {
 
 it('searches source IDs, uses global adjacency, and handles boundaries', () => {
   expect(filterLessons('  c07 ').map(l => l.id)).toEqual(['D04']);
-  expect(filterLessons('Understand spatial measurements')).toHaveLength(4);
+  expect(filterLessons('Geometry and color controls')).toHaveLength(3);
   expect(filterLessons('no-such-lesson')).toEqual([]);
   expect(adjacentLesson('D04', 1)?.id).toBe('D05');
   expect(adjacentLesson('D01', -1)).toBeUndefined();

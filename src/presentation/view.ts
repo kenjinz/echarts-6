@@ -1,4 +1,4 @@
-﻿import { getExample } from '../app/experimentRegistry';
+import { EXAMPLES, getExample } from '../app/experimentRegistry';
 import { APPENDIX, CHAPTERS, LESSONS } from './catalog';
 import { adjacentLesson, filterLessons } from './navigation';
 import type { PresentationMode, Selection, UtilityPanel, Variant } from './types';
@@ -121,7 +121,7 @@ export function createPresentationView(callbacks: PresentationCallbacks): Presen
     element('technical-appendix').hidden = selection.mode !== 'guided';
     const noticeNode = element('navigation-notice');
     noticeNode.textContent = notice ?? ''; noticeNode.hidden = !notice;
-    element('catalog-heading').textContent = selection.mode === 'guided' ? '20 lessons' : '66 examples';
+    element('catalog-heading').textContent = selection.mode === 'guided' ? `${LESSONS.length} lessons` : `${EXAMPLES.length} examples`;
     for (const { item, anchor } of homes) anchor.after(item);
     exportPanel.remove(); sourceInfo.remove();
     if (selection.mode === 'engineering') {

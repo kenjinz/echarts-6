@@ -10,7 +10,7 @@ test('browses all examples and exposes runtime sharing controls', async ({ page 
 
   await page.goto('/?example=M02');
 
-  await expect(page.getByTestId('example-button')).toHaveCount(66);
+  await expect(page.getByTestId('example-button')).toHaveCount(62);
   await expect(page.getByTestId('example-id')).toHaveText('M02');
   await expect(page.getByTestId('echarts-version')).toContainText('6.1.0');
   await expect(page.getByTestId('init-count')).toHaveText('1');
@@ -19,7 +19,7 @@ test('browses all examples and exposes runtime sharing controls', async ({ page 
 
   await page.getByTestId('example-button').filter({ hasText: 'C06' }).click();
   await expect(page.getByTestId('example-id')).toHaveText('C06');
-  const xZoomScope = page.getByLabel('X dataZoom scope');
+  const xZoomScope = page.getByLabel('X axis sharing');
   await expect(xZoomScope.locator('option')).toHaveText([
     'Individual', 'All cells', 'Per row', 'Per column'
   ]);
@@ -101,14 +101,15 @@ test('renders the absolute multi-grid3D fallback with observable WebGL resources
 
   await page.goto('/?example=G02');
   await expect(page.locator('#chart-status')).toContainText('G02 running');
-  await expect(page.locator('#experiment-chart canvas')).toHaveCount(1);
+  // One WebGL canvas renders all viewports; a 2D canvas renders panel titles.
+  await expect(page.locator('#experiment-chart canvas')).toHaveCount(2);
   await expect(page.locator('#webgl-count')).not.toHaveText('0');
   expect(errors).toEqual([]);
 });
 
 test('applies value changes to exactly the cells selected by sharing scope', async ({ page }) => {
   await page.goto('/?example=C02');
-  await page.getByLabel('X range scope').selectOption('row');
+  await page.getByLabel('X axis sharing').selectOption('row');
   await page.getByRole('button', { name: 'Change X range' }).click();
   await page.getByRole('button', { name: 'Export state' }).click();
   const state = JSON.parse(await page.getByLabel('State snapshot JSON').inputValue());

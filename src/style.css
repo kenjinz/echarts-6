@@ -79,12 +79,12 @@ h2 { margin-bottom: 0; font-size: 1.03rem; letter-spacing: -.015em; }
 .field select:disabled, .field input:disabled { cursor: not-allowed; opacity: .68; }
 .action-row { margin-top: 13px; border-top: 1px solid var(--line); padding-top: 13px; }
 
-.chart-card { overflow: hidden; }
+.chart-card { overflow-x: auto; }
 .chart-toolbar { border-bottom: 1px solid var(--line); background: var(--panel-soft); padding: 9px 13px; color: var(--muted); font-size: .74rem; }
 .chart-toolbar p { margin: 0; }
 #chart-status.is-error { color: var(--danger); font-weight: 700; }
 #experiment-chart { width: 100%; height: clamp(520px, 62vh, 760px); min-height: 520px; background: #fff; }
-#experiment-chart.baseline-layout { display: grid; grid-template-columns: repeat(var(--baseline-columns, 2), minmax(190px, 1fr)); gap: 1px; background: var(--line); overflow: auto; }
+#experiment-chart.baseline-layout { display: grid; grid-template-columns: repeat(var(--baseline-columns, 2), minmax(190px, 1fr)); grid-auto-rows: minmax(260px, 1fr); gap: 1px; background: var(--line); overflow: auto; }
 .baseline-cell { min-width: 190px; min-height: 260px; background: #fff; }
 
 .state-panel textarea { min-height: 125px; margin-top: 12px; resize: vertical; padding: 10px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: .72rem; line-height: 1.4; }

@@ -8,6 +8,7 @@ import type {
   SharingState
 } from '../core/types';
 import { resolveTargetCellIds } from './targetResolver';
+import { axisDimension, changeAxisSharing, supportsSharedAxis, normalizeSharedAxes } from './sharedAxes';
 
 export type ConflictPolicy = 'first-cell' | 'configured' | 'derived';
 
@@ -80,6 +81,14 @@ export function parseSnapshot(serialized: string): AppStateSnapshot {
     Number.isInteger(value) && Number(value) >= 0 && Number(value) <= 5;
   const sharing = candidate.sharing;
   const interactive = candidate.interactive;
+  const positions = candidate.sharedAxisPositions;
+  const sharedAxes = candidate.sharedAxes;
+  const validSharedAxes = sharedAxes === undefined || (isRecord(sharedAxes) && Object.entries(sharedAxes).every(([dimension, value]) => {
+    if (!['x', 'y'].includes(dimension) || !isRecord(value) || !validScopes.has(String(value.scope)) || !isRecord(value.groups)) return false;
+    return Object.values(value.groups).every((state) => isRecord(state) &&
+      (state.range === undefined || (Array.isArray(state.range) && state.range.length === 2 && state.range.every((number) => typeof number === 'number' && Number.isFinite(number)) && state.range[0] < state.range[1])) &&
+      (state.zoom === undefined || (isRecord(state.zoom) && typeof state.zoom.start === 'number' && typeof state.zoom.end === 'number' && state.zoom.start >= 0 && state.zoom.end <= 100 && state.zoom.start <= state.zoom.end)));
+  }));
   const validInteractiveKeys = [
     'axisRanges', 'dataZoom', 'legendSelections', 'seriesVisibility',
     'symbolVisibility', 'colorScaleRange', 'vectorScale',
@@ -90,6 +99,10 @@ export function parseSnapshot(serialized: string): AppStateSnapshot {
     typeof candidate.seed !== 'number' || !Number.isFinite(candidate.seed) ||
     (candidate.renderer !== 'canvas' && candidate.renderer !== 'svg') ||
     !validDimensions(candidate.rows) || !validDimensions(candidate.columns) ||
+    !validSharedAxes ||
+    (positions !== undefined && (!isRecord(positions) ||
+      !['top', 'bottom'].includes(String(positions.x)) ||
+      !['left', 'right'].includes(String(positions.y)))) ||
     !isRecord(sharing) ||
     !SHARING_ELEMENTS.every((element) => validScopes.has(String(sharing[element]))) ||
     !isRecord(interactive) ||
@@ -119,6 +132,12 @@ export function reconcileSharingState(
   newScope: SharingState[SharingElement],
   policy: ConflictPolicy
 ): void {
+  const sharedDimension = axisDimension(element);
+  const example = getExample(snapshot.exampleId);
+  if (sharedDimension && supportsSharedAxis(example, sharedDimension)) {
+    changeAxisSharing(snapshot, example, cells, sharedDimension, newScope, policy);
+    return;
+  }
   const targets = resolveTargetCellIds(cells, activeCellId, newScope);
   const source = policy === 'first-cell' ? targets[0] : undefined;
   const dimension = element === 'xRange' ? 'x'
@@ -182,9 +201,15 @@ export function prepareSnapshot(exampleId: string, imported?: AppStateSnapshot):
   const example = getExample(exampleId);
   if (imported) {
     if (imported.exampleId !== exampleId) throw new Error('Snapshot example does not match requested example');
-    return structuredClone(imported);
+    const state = structuredClone(imported);
+    normalizeSharedAxes(state, example);
+    return state;
   }
   const state = createDefaultSnapshot(exampleId, 20260914);
+  if (exampleId === 'C05' || exampleId === 'C17') {
+    state.sharing.xRange = state.sharing.yRange = 'all';
+    normalizeSharedAxes(state, example);
+  }
   if (exampleId === 'P12') { state.rows = 3; state.columns = 2; }
   if (example.family === 'three-dimensional') {
     for (const cell of createCells(state.rows, state.columns)) state.interactive.viewMode[cell.id] = '3d';

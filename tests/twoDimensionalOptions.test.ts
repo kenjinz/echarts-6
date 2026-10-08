@@ -85,7 +85,7 @@ describe('2D experiment option topology', () => {
   });
 
   it('builds clipped bounded geometry with traceable custom-series IDs', () => {
-    const series = list(build('S01', 1, 1).series);
+    const series = list(build('S02', 1, 1).series);
 
     expect(series.map((entry) => entry.id)).toEqual(expect.arrayContaining([
       'series/row-0:column-0/boundary',
@@ -150,7 +150,7 @@ describe('2D experiment option topology', () => {
     expect(grids).toHaveLength(1);
     expect(grids[0].id).toBe('grid/row-0:column-1/main');
     expect(grids[0]).not.toHaveProperty('coordinateSystem');
-    expect(grids[0]).toEqual(expect.objectContaining({ left: 70, right: 35, top: 55, bottom: 50 }));
+    expect(grids[0]).toEqual(expect.objectContaining({ left: 70, right: 35, top: 70, bottom: 50 }));
     expect(list(option.series).every((series) => String(series.id).includes('row-0:column-1'))).toBe(true);
   });
 
@@ -202,7 +202,9 @@ describe('2D experiment option topology', () => {
   });
 
   it('uses boundary-only visible axes for the C05 synchronized-axis comparison', () => {
-    const option = build('C05');
+    const snapshot = createDefaultSnapshot('C05', 19);
+    snapshot.sharing.xRange = snapshot.sharing.yRange = 'all';
+    const option = buildTwoDimensionalOption({ example: getExample('C05'), cells: createCells(2, 2), snapshot }) as InspectableOption;
     const xAxes = list(option.xAxis);
     const yAxes = list(option.yAxis);
     expect(xAxes.filter((axis) => (axis.axisLine as Component).show === true)).toHaveLength(2);
@@ -280,12 +282,11 @@ describe('2D experiment option topology', () => {
   });
 
   it('targets real bounded and compound series names and restores selection state', () => {
-    const boundedSnapshot = createDefaultSnapshot('S07', 37);
-    boundedSnapshot.sharing.legendSelection = 'row';
+    const boundedSnapshot = createDefaultSnapshot('S02', 37);
     boundedSnapshot.interactive.symbolVisibility['row-0:column-0'] = false;
     boundedSnapshot.interactive.selectedDataItems['row-0:column-0'] = ['region-1'];
     const bounded = buildTwoDimensionalOption({
-      example: getExample('S07'),
+      example: getExample('S02'),
       cells: createCells(2, 2),
       snapshot: boundedSnapshot
     }) as InspectableOption;
@@ -293,8 +294,8 @@ describe('2D experiment option topology', () => {
     const symbolSeries = list(bounded.series).find((series) => series.id === 'series/row-0:column-0/symbols');
     const regions = list(bounded.series).find((series) => series.id === 'series/row-0:column-0/regions');
 
-    expect(boundedLegendData).toContain('Regions/row-0');
-    expect(boundedLegendData).not.toContain('Observed/row-0');
+    expect(boundedLegendData).toContain('Regions/row-0:column-0');
+    expect(boundedLegendData).not.toContain('Observed/row-0:column-0');
     expect(symbolSeries?.symbolSize).toBe(0);
     expect((regions?.data as Component[])[1]).toEqual(expect.objectContaining({ id: 'region-1', selected: true }));
 

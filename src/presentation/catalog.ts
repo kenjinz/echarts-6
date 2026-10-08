@@ -8,7 +8,7 @@ export const CHAPTERS: readonly Chapter[] = [
   },
   {
     "id": "spatial",
-    "title": "Understand spatial measurements"
+    "title": "Geometry and color controls"
   },
   {
     "id": "profiles",
@@ -62,7 +62,8 @@ const definitions = [
       "C02",
       "C03",
       "C04",
-      "C05"
+      "C05",
+      "C17"
     ]
   },
   {
@@ -84,8 +85,7 @@ const definitions = [
     "sources": [
       "C09",
       "C10",
-      "C11",
-      "S07"
+      "C11"
     ]
   },
   {
@@ -96,17 +96,15 @@ const definitions = [
     "sources": [
       "M07",
       "C13",
-      "C14",
-      "S08"
+      "C14"
     ]
   },
   {
     "id": "D07",
     "chapterId": "spatial",
-    "title": "Spatial geometry during zoom",
-    "question": "Does zoom preserve the meaning of geometry?",
+    "title": "Marker sizing and equal-scale geometry",
+    "question": "How do data-sized shapes and equal coordinate scales behave during resize?",
     "sources": [
-      "S01",
       "S02",
       "S09"
     ]
@@ -128,16 +126,6 @@ const definitions = [
     "question": "How do arrows communicate direction and size?",
     "sources": [
       "S03"
-    ]
-  },
-  {
-    "id": "D10",
-    "chapterId": "spatial",
-    "title": "Continue a spatial investigation through updates",
-    "question": "Which investigation settings survive updates?",
-    "sources": [
-      "S06",
-      "S10"
     ]
   },
   {
@@ -284,6 +272,6 @@ export const APPENDIX: readonly AppendixEntry[] = [
   },
   {
     "exampleId": "G01",
-    "reason": "Investigate native 3D placement independently of explicit layout."
+    "reason": "Unsupported native matrix placement: 3D views overlap. G02 demonstrates working explicit placement."
   }
 ];
